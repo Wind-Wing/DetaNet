@@ -338,7 +338,6 @@ def res_fire_layer(input_tensor, e1x1, is_active, layer_name, stddev=0.01,freeze
   """
   kernels = []
   biases = []
-
   s1x1 = input_tensor.get_shape()[3]
   e3x3 = s1x1 - e1x1
 
