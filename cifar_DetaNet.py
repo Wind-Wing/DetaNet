@@ -45,8 +45,9 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate):
   tr_data1=tr_data_cifar10;
   tr_label1=tr_label_cifar10;
   data_num_len1=data_num_len_cifar10;
+  print(data_num_len1)
   
-  L = candidate.feature_layer_num + candidate.fc_layer_num
+  L = candidate.feature_layer_num + candidate.fc_layer_num + 1 # +1 for first conv layer
   M = candidate.module_num
   F = candidate.filter_num
   FC = candidate.fc_layer_num
@@ -88,13 +89,13 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate):
   net=np.sum(layer_modules_list)/ M
 
   # feature abstract layers
-  for i in range(len(FL))[1:]:
+  for i in range(len(FL)):
     if FL[i] == 0:
       for j in range(M):
-        layer_modules_list[j], weights_list[i,j], biases_list[i,j] = pathnet.res_fire_layer(net, geopath[i,j], 'layer'+str(i+1)+"_"+str(j+1))
+        layer_modules_list[j], weights_list[i + 1,j], biases_list[i + 1,j] = pathnet.res_fire_layer(net, geopath[i + 1,j], 'layer'+str(i+2)+"_"+str(j+1))
     else:
       for j in range(M):
-        layer_modules_list[j], weights_list[i,j], biases_list[i,j] = pathnet.Dimensionality_reduction_module(net, geopath[i,j], 'layer'+str(i+1)+"_"+str(j+1))    
+        layer_modules_list[j], weights_list[i + 1,j], biases_list[i + 1,j] = pathnet.Dimensionality_reduction_module(net, geopath[i + 1,j], 'layer'+str(i+2)+"_"+str(j+1))    
 
     net=np.sum(layer_modules_list)/ M    
 
@@ -107,7 +108,7 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate):
   net=tf.reshape(net,[-1,_length])
 
     # full connection
-  for i in range(L)[len(FL):]:
+  for i in range(L)[len(FL)+1:]:
     for j in range(M):
       layer_modules_list[j], weights_list[i,j], biases_list[i, j] = pathnet.fc_layer(net, F, geopath[i,j], 'layer'+str(i+1)+"_"+str(j+1))
   net = np.sum(layer_modules_list)/ M    
@@ -154,6 +155,7 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate):
   for k in range(FLAGS.T):
     acc_geo_tmp = sess.run(accuracy, feed_dict={x:tr_data1[k*FLAGS.batch_num:(k+1)*FLAGS.batch_num,:],y_:tr_label1[k*FLAGS.batch_num:(k+1)*FLAGS.batch_num,:]});
     acc_geo_tr+=acc_geo_tmp
+    if(k%100 == 0):print(acc_geo_tr/k)
     
   return  acc_geo_tr/FLAGS.T
 

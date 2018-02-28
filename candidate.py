@@ -21,4 +21,4 @@ class Candidate:
 
     def mutation(self):pass # apply mutation to this candidate
 
-    def crossover(self):pass# inheir genotype from parents
+    def crossover(self, parent_list):pass# inheir genotype from parents
