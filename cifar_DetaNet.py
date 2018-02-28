@@ -82,38 +82,39 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate):
   # model define
   layer_modules_list=np.zeros(M,dtype=object)
 
-  net = None
-  for i in range(len(FL)):
-    if i == 0: 
-      _input = image_shaped_input 
-    else:
-      _input = net
+  # first layer: conv 
+  for j in range(M):
+    layer_modules_list[j], weights_list[0,j], biases_list[0,j] = pathnet.conv_module(image_shaped_input, F, [5,5], geopath[i,j], 1,  'layer'+str(i+1)+"_"+str(j+1))
+  net=np.sum(layer_modules_list)/ M
 
+  # feature abstract layers
+  for i in range(len(FL))[1:]:
     if FL[i] == 0:
       for j in range(M):
-        layer_modules_list[j], weights_list[i,j], biases_list[i,j] = pathnet.res_fire_layer(_input, F/2, geopath[i,j], 'layer'+str(i+1)+"_"+str(j+1))
+        layer_modules_list[j], weights_list[i,j], biases_list[i,j] = pathnet.res_fire_layer(net, geopath[i,j], 'layer'+str(i+1)+"_"+str(j+1))
     else:
       for j in range(M):
-        layer_modules_list[j], weights_list[i,j], biases_list[i,j] = pathnet.Dimensionality_reduction_module(_input, F/2, geopath[i,j], 'layer'+str(i+1)+"_"+str(j+1))    
+        layer_modules_list[j], weights_list[i,j], biases_list[i,j] = pathnet.Dimensionality_reduction_module(net, geopath[i,j], 'layer'+str(i+1)+"_"+str(j+1))    
 
-    net=np.sum(layer_modules_list)/FLAGS.M;    
+    net=np.sum(layer_modules_list)/ M    
 
-  # output layer
+  # full connection layer
     # reshape
   _shape = net.shape[1:]
   _length = 1
   for _i in _shape:
       _length *= int(_i)
   net=tf.reshape(net,[-1,_length])
-    # full connection layer
-  output_weights = []
-  output_biases = []
-  for i in range(FC):
-    net, _output_weights ,_output_biases = pathnet.nn_layer(net, 10, 'fc_layer'+str(i))
-    output_weights.append(_output_weights)
-    output_biases.append(_output_biases)
-  y = net
 
+    # full connection
+  for i in range(L)[len(FL):]:
+    for j in range(M):
+      layer_modules_list[j], weights_list[i,j], biases_list[i, j] = pathnet.fc_layer(net, F, geopath[i,j], 'layer'+str(i+1)+"_"+str(j+1))
+  net = np.sum(layer_modules_list)/ M    
+
+  # output layer
+  y, output_weights ,output_biases = pathnet.nn_layer(net, 10, 'fc_layer'+str(i))
+    
   # Cross Entropy
   with tf.name_scope('cross_entropy'):
     diff = tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y)
@@ -148,11 +149,11 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate):
   np.random.shuffle(idx)
   tr_data1=tr_data1[idx]
   tr_label1=tr_label1[idx]
-  acc_geo_tr=0;
+  acc_geo_tr=0
     # train
   for k in range(FLAGS.T):
     acc_geo_tmp = sess.run(accuracy, feed_dict={x:tr_data1[k*FLAGS.batch_num:(k+1)*FLAGS.batch_num,:],y_:tr_label1[k*FLAGS.batch_num:(k+1)*FLAGS.batch_num,:]});
-    acc_geo_tr+=acc_geo_tmp;
+    acc_geo_tr+=acc_geo_tmp
     
   return  acc_geo_tr/FLAGS.T
 
@@ -172,7 +173,8 @@ def main(_):
   candidate1 = Candidate()
 
   # evolution algo
-  train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate1)
+  acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate1)
+  print(acc)
 
 
 if __name__ == '__main__':

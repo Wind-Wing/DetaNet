@@ -104,8 +104,8 @@ def variable_summaries(var):
     tf.summary.scalar('min', tf.reduce_min(var))
     tf.summary.histogram('histogram', var)
 
-# input layer module, in another word, first hidden layer
-def module(input_tensor, filt_num, is_active, layer_name, act=tf.nn.relu):
+# full connection layer
+def fc_layer(input_tensor, filt_num, is_active, layer_name, act=tf.nn.relu):
   # init
   weights=module_weight_variable([int(input_tensor.shape[-1]), filt_num])
   biases=module_bias_variable([filt_num])
@@ -193,7 +193,7 @@ def conv_module(input_tensor, filt_num, kernel_size, is_active, stride, layer_na
     return activations * is_active, conv_kernel, biases
 
 def nn_layer(input_tensor, result_num, layer_name, act=tf.nn.relu):
-  ''' Full connection layer
+  ''' Output layer
   '''
   #init
   weights = module_weight_variable([int(input_tensor.shape[-1]),result_num])
@@ -339,6 +339,7 @@ def res_fire_layer(input_tensor, e1x1, is_active, layer_name, stddev=0.01,freeze
   kernels = []
   biases = []
   s1x1 = input_tensor.get_shape()[3]
+  e1x1 = s1x1 / 2
   e3x3 = s1x1 - e1x1
 
   sq1x1, _kernel, _bias = _conv_layer(layer_name+'/squeeze1x1', input_tensor, filters=s1x1, size=1, stride=1,
@@ -391,7 +392,7 @@ def res_module(input_tensor, is_active, layer_name, stddev=0.01, freeze=False):
   return (input_tensor + feature_map_of_secondlayer) * is_active, kernels, biases
 
 
-def Dimensionality_reduction_module(input_tensor, c3x3, is_active, layer_name, stddev=0.01,freeze=False):
+def Dimensionality_reduction_module(input_tensor, is_active, layer_name, stddev=0.01,freeze=False):
   """Dimensionality_reduction layer constructor.
   Args:
     layer_name: layer name
@@ -401,6 +402,7 @@ def Dimensionality_reduction_module(input_tensor, c3x3, is_active, layer_name, s
   Returns:
     Dimensionality_reduction operation.
   """
+  c3x3 = int(input_tensor.get_shape()[3]) / 2
   feature_map_of_pooling = _max_pooling_layer(input_tensor,  kernel_size= 2, stride=2, padding='VALID', layer_name = layer_name+'/pooling')
   feature_map_of_convolution, _kernel, _bias = _conv_layer(layer_name+'/convolution', input_tensor, filters=c3x3, size=2, stride=2,
     padding='VALID', stddev=stddev, freeze=freeze)
