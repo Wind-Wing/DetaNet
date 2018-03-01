@@ -339,7 +339,7 @@ def res_fire_layer(input_tensor, is_active, layer_name, stddev=0.01,freeze=False
   kernels = []
   biases = []
   s1x1 = int(input_tensor.get_shape()[3])
-  e1x1 = s1x1 / 2
+  e1x1 = int(s1x1 / 2)
   e3x3 = s1x1 - e1x1
 
   sq1x1, _kernel, _bias = _conv_layer(layer_name+'/squeeze1x1', input_tensor, filters=s1x1, size=1, stride=1,
@@ -402,7 +402,7 @@ def Dimensionality_reduction_module(input_tensor, is_active, layer_name, stddev=
   Returns:
     Dimensionality_reduction operation.
   """
-  c3x3 = int(input_tensor.get_shape()[3]) / 2
+  c3x3 = int(int(input_tensor.get_shape()[3]) / 2)
   feature_map_of_pooling = _max_pooling_layer(input_tensor,  kernel_size= 2, stride=2, padding='VALID', layer_name = layer_name+'/pooling')
   feature_map_of_convolution, _kernel, _bias = _conv_layer(layer_name+'/convolution', input_tensor, filters=c3x3, size=2, stride=2,
     padding='VALID', stddev=stddev, freeze=freeze)

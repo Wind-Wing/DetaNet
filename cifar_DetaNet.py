@@ -41,15 +41,16 @@ def load_cifar10_data():
   return tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10
 
 def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, max_steps):
+
+  candidate.display_structure()
   # define local variables
   tr_data1=tr_data_cifar10;
   tr_label1=tr_label_cifar10;
   data_num_len1=data_num_len_cifar10;
-  print(data_num_len1)
   
   L = candidate.feature_layer_num + candidate.fc_layer_num + 1 # +1 for first conv layer
   M = candidate.module_num
-  F = candidate.filter_num
+  F = candidate.filter_num * 2  # due to filter number must be an even number
   FC = candidate.fc_layer_num
   FL = candidate.feature_layer_array
   
@@ -84,18 +85,17 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, ma
 
   # first layer: conv 
   for j in range(M):
-    layer_modules_list[j], weights_list[0,j], biases_list[0,j] = pathnet.conv_module(image_shaped_input, F, [5,5], geopath[i,j], 1,  'layer'+str(i+1)+"_"+str(j+1))
+    layer_modules_list[j], weights_list[0,j], biases_list[0,j] = pathnet.conv_module(image_shaped_input, F, [5,5], geopath[0,j], 1,  'conv_layer'+str(0+1)+"_"+str(j+1))
   net=np.sum(layer_modules_list)/ M
 
   # feature abstract layers
   for i in range(len(FL)):
     if FL[i] == 0:
       for j in range(M):
-        layer_modules_list[j], weights_list[i + 1,j], biases_list[i + 1,j] = pathnet.res_fire_layer(net, geopath[i + 1,j], 'layer'+str(i+2)+"_"+str(j+1))
+        layer_modules_list[j], weights_list[i + 1,j], biases_list[i + 1,j] = pathnet.res_fire_layer(net, geopath[i + 1,j], 'res_fire_layer'+str(i+2)+"_"+str(j+1))
     else:
       for j in range(M):
-        layer_modules_list[j], weights_list[i + 1,j], biases_list[i + 1,j] = pathnet.Dimensionality_reduction_module(net, geopath[i + 1,j], 'layer'+str(i+2)+"_"+str(j+1))    
-
+        layer_modules_list[j], weights_list[i + 1,j], biases_list[i + 1,j] = pathnet.Dimensionality_reduction_module(net, geopath[i + 1,j], 'dimension_reduction_layer'+str(i+2)+"_"+str(j+1))    
     net=np.sum(layer_modules_list)/ M    
 
   # full connection layer
@@ -109,11 +109,11 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, ma
     # full connection
   for i in range(L)[len(FL)+1:]:
     for j in range(M):
-      layer_modules_list[j], weights_list[i,j], biases_list[i, j] = pathnet.fc_layer(net, F, geopath[i,j], 'layer'+str(i+1)+"_"+str(j+1))
-  net = np.sum(layer_modules_list)/ M    
+      layer_modules_list[j], weights_list[i,j], biases_list[i, j] = pathnet.fc_layer(net, F, geopath[i,j], 'fc_layer'+str(i+1)+"_"+str(j+1))
+    net = np.sum(layer_modules_list)/ M    
 
   # output layer
-  y, output_weights ,output_biases = pathnet.nn_layer(net, 10, 'fc_layer'+str(i))
+  y, output_weights ,output_biases = pathnet.nn_layer(net, 10, 'output_layer'+str(i))
     
   # Cross Entropy
   with tf.name_scope('cross_entropy'):
@@ -203,7 +203,7 @@ def main(_):
  
     print("step: %d, acc: %f" % (step, max(acc)))
 
-  candidates[best_index].print()
+  candidates[best_index].display_structure()
   final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, i, 500)
   print("best structure acc "+ str(final_acc))
 

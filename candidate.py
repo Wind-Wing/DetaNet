@@ -9,7 +9,7 @@ class Candidate:
     # struct level 2
     module_num = 0         # modules in each layer
     # struct level 3
-    filter_num = 0          # filters in each module
+    filter_num = 0          # filters in each module, must be an even number
 
     # evolution argus
         # range argus
@@ -19,23 +19,23 @@ class Candidate:
     maxFc = 2
     minM = 6
     maxM = 10
-    minFl = 6
-    maxFl = 20
+    minFl = 6 / 2       # due to filter number must be an even number for fire and demonsion layer
+    maxFl = 20 / 2
         # mutation argus
     mutation_rate = 0.2
     
 
     # random generate candidates
     def __init__(self):
-        self.feature_layer_num = _get_normal_random_int(self.minFr, self.maxFr)
-        self.feature_layer_array = [np.random.randint(2) for i in range(feature_layer_num)] # 0 or 1 sequence
-        self.fc_layer_num = _get_normal_random_int(self.minFc, self.maxFc)
+        self.feature_layer_num = self._get_normal_random_int(self.minFr, self.maxFr)
+        self.feature_layer_array = [np.random.randint(2) for i in range(self.feature_layer_num)] # 0 or 1 sequence
+        self.fc_layer_num = self._get_normal_random_int(self.minFc, self.maxFc)
 
-        self.module_num = _get_normal_random_int(self.minM, self.maxM)
+        self.module_num = self._get_normal_random_int(self.minM, self.maxM)
 
-        self.filter_num = _get_normal_random_int(self.minFl, self.maxFl)
+        self.filter_num = self._get_normal_random_int(self.minFl, self.maxFl)
     
-    def _get_normal_random_int(min_value,max_value):
+    def _get_normal_random_int(self, min_value, max_value):
         # this random generator is based on that 
         # min_value is near 0
         # +-3*sigma value represent 99% possible
@@ -49,7 +49,7 @@ class Candidate:
 
     def mutation(self): # apply mutation to this candidate
         self.feature_layer_num = int((1 - mutation_rate) * self.feature_layer_num
-                            + mutation_rate * _get_normal_random_int(self.minFr, self.maxFr))
+                            + mutation_rate * self._get_normal_random_int(self.minFr, self.maxFr))
         
         _dst = self.feature_layer_num - len(self.feature_layer_array)
         if(_dst < 0):
@@ -63,11 +63,11 @@ class Candidate:
             feature_layer_array[_index] = not feature_layer_array[_index] 
 
         self.fc_layer_num = int((1 - mutation_rate) * self.fc_layer_num 
-                            + mutation_rate * _get_normal_random_int(self.minFc, self.maxFc))
+                            + mutation_rate * self._get_normal_random_int(self.minFc, self.maxFc))
         self.module_num = int((1 - mutation_rate) * self.module_num
-                            + mutation_rate * _get_normal_random_int(self.minM, self.maxM))
+                            + mutation_rate * self._get_normal_random_int(self.minM, self.maxM))
         self.filter_num = int((1 - mutation_rate) * self.filter_num
-                            + mutation_rate * _get_normal_random_int(self.minFl, self.maxFl))
+                            + mutation_rate * self._get_normal_random_int(self.minFl, self.maxFl))
 
     def crossover(self, parentA, parentB): # inheir genotype from parents
         _min = min(parentA.feature_layer_num ,parentB.feature_layer_num)
@@ -87,7 +87,7 @@ class Candidate:
         _max = max(parentA.filter_num, parentB.filter_num)
         self.filter_num = np.random.randint(_min, _max + 1)
 
-    def print(self): # show network struct info represented by this candidate
+    def display_structure(self): # show network struct info represented by this candidate
         print("feature array, 0 - conv and 1 - pooling: ")
         print(self.feature_layer_array)
         print("full connection layer number: ")
@@ -95,4 +95,4 @@ class Candidate:
         print("module number in each layer: ")
         print(self.module_num)
         print("filter number in each module: ")
-        print(self.filter_num)
+        print(self.filter_num  * 2)
