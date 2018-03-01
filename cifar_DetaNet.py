@@ -40,7 +40,7 @@ def load_cifar10_data():
 
   return tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10
 
-def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate):
+def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, max_steps):
   # define local variables
   tr_data1=tr_data_cifar10;
   tr_label1=tr_label_cifar10;
@@ -75,12 +75,11 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate):
     for j in range(M):
       fixed_list[i,j]='0';    
 
-  # Hidden Layers
+  # record weights and biases that need to change
   weights_list=np.zeros((L, M),dtype=object);
   biases_list=np.zeros((L, M),dtype=object);
 
-
-  # model define
+  ## model define
   layer_modules_list=np.zeros(M,dtype=object)
 
   # first layer: conv 
@@ -152,18 +151,17 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate):
   tr_label1=tr_label1[idx]
   acc_geo_tr=0
     # train
-  for k in range(FLAGS.T):
-    acc_geo_tmp = sess.run(accuracy, feed_dict={x:tr_data1[k*FLAGS.batch_num:(k+1)*FLAGS.batch_num,:],y_:tr_label1[k*FLAGS.batch_num:(k+1)*FLAGS.batch_num,:]});
+  for k in range(max_steps):
+    _, acc_geo_tmp = sess.run([train_step, accuracy], feed_dict={x:tr_data1[k*FLAGS.batch_num:(k+1)*FLAGS.batch_num,:],y_:tr_label1[k*FLAGS.batch_num:(k+1)*FLAGS.batch_num,:]});
     acc_geo_tr+=acc_geo_tmp
-    if(k%100 == 0):print(acc_geo_tr/k)
     
-  return  acc_geo_tr/FLAGS.T
+  return  acc_geo_tr / max_steps
 
 
 def main(_):
   # create log dir but not used
   FLAGS.log_dir+="cifar/"
-  FLAGS.log_dir+=str(int(time.time()));
+  FLAGS.log_dir+=str(int(time.time()))
   if tf.gfile.Exists(FLAGS.log_dir):
     tf.gfile.DeleteRecursively(FLAGS.log_dir)
   tf.gfile.MakeDirs(FLAGS.log_dir)
@@ -171,35 +169,64 @@ def main(_):
   # read cifar10 dataset
   tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10 = load_cifar10_data()
 
-  # ceate a candidate
-  candidate1 = Candidate()
+  # ceate inti candidates
+  candidates = [Candidate() for i in range(FLAGS.candi)]
 
   # evolution algo
-  acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate1)
-  print(acc)
+  _best1 = 0
+  _best2 = 0
+  _worst1 = 0
+  _worst2 = 0
+  for step in range(FLAGS.max_generations):
+    # train and evaluate
+    acc = []
+    for i in candidates:
+      acc += [train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, i, FLAGS.T)]
+
+    # find best and worst
+    _best1 = acc.index(sorted(acc)[-1])
+    _best2 = acc.index(sorted(acc)[-2])
+    _worst1 = acc.index(sorted(acc)[0])
+    _worst2 = acc.index(sorted(acc)[1])
+
+    # create offsprings
+    _offspring1 = Candidate()
+    _offspring2 = Candidate()
+    _offspring1.crossover(candidates[_best1], candidates[_best2])
+    _offspring2.crossover(candidates[_best2], candidates[_best1])
+    _offspring1.mutation()
+    _offspring2.mutation()
+
+    # survivor selection
+    candidates[_worst1] = _offspring1
+    candidates[_worst2] = _offspring2
+ 
+    print("step: %d, acc: %f" % (step, max(acc)))
+
+  candidates[best_index].print()
+  final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, i, 500)
+  print("best structure acc "+ str(final_acc))
 
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
-  parser.add_argument('--learning_rate', type=float, default=0.2,
-                      help='Initial learning rate')
-  #parser.add_argument('--max_steps', type=int, default=500,
-  #                    help='Number of steps to run trainer.')
-  #parser.add_argument('--dropout', type=float, default=0.9,
-  #                    help='Keep probability for training dropout.')
-  parser.add_argument('--cifar_data_dir', type=str, default='/home/petch/Desktop/zzs/data_set/cifar_data/cifar-10-batches-bin',
+  
+  parser.add_argument('--cifar_data_dir', type=str, default='/dataset/cifar_data/cifar-10-batches-bin',
                       help='Directory for storing input data')
   parser.add_argument('--log_dir', type=str, default='/tmp/tensorflow/DetaNet/',
                       help='Summaries log directry')
-  parser.add_argument('--N', type=int, default=5,
-                      help='The Number of Selected Modules per Layer')
+
+  parser.add_argument('--learning_rate', type=float, default=0.2,
+                      help='Initial learning rate')
+
   parser.add_argument('--T', type=int, default=50,
                       help='The Number of epoch per each geopath')
   parser.add_argument('--batch_num', type=int, default=16,
                       help='The Number of batches per each geopath')
   parser.add_argument('--candi', type=int, default=20,
-                      help='The Number of Candidates of geopath')
-  parser.add_argument('--B', type=int, default=2,
-                      help='The Number of Candidates for each competition')
+                      help='The Number of Candidates of geopath, should greater than 4')
+  parser.add_argument('--max_generations', type = int,default = 100,
+                      help='The Generation Number of Evolution')
+
   FLAGS, unparsed = parser.parse_known_args()
   tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
