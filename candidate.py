@@ -48,8 +48,8 @@ class Candidate:
         return _value
 
     def mutation(self): # apply mutation to this candidate
-        self.feature_layer_num = int((1 - mutation_rate) * self.feature_layer_num
-                            + mutation_rate * self._get_normal_random_int(self.minFr, self.maxFr))
+        self.feature_layer_num = int((1 - self.mutation_rate) * self.feature_layer_num
+                            + self.mutation_rate * self._get_normal_random_int(self.minFr, self.maxFr))
         
         _dst = self.feature_layer_num - len(self.feature_layer_array)
         if(_dst < 0):
@@ -58,16 +58,16 @@ class Candidate:
         elif(_dst > 0):
             self.feature_layer_array += [np.ramdom.randint(2) for i in range(_dst)]
 
-        for i in int(mutation_rate * len(self.feature_layer_array)):
+        for i in range(int(self.mutation_rate * len(self.feature_layer_array))):
             _index = np.random.randint(len(self.feature_layer_array))
             feature_layer_array[_index] = not feature_layer_array[_index] 
 
-        self.fc_layer_num = int((1 - mutation_rate) * self.fc_layer_num 
-                            + mutation_rate * self._get_normal_random_int(self.minFc, self.maxFc))
-        self.module_num = int((1 - mutation_rate) * self.module_num
-                            + mutation_rate * self._get_normal_random_int(self.minM, self.maxM))
-        self.filter_num = int((1 - mutation_rate) * self.filter_num
-                            + mutation_rate * self._get_normal_random_int(self.minFl, self.maxFl))
+        self.fc_layer_num = int((1 - self.mutation_rate) * self.fc_layer_num 
+                            + self.mutation_rate * self._get_normal_random_int(self.minFc, self.maxFc))
+        self.module_num = int((1 - self.mutation_rate) * self.module_num
+                            + self.mutation_rate * self._get_normal_random_int(self.minM, self.maxM))
+        self.filter_num = int((1 - self.mutation_rate) * self.filter_num
+                            + self.mutation_rate * self._get_normal_random_int(self.minFl, self.maxFl))
 
     def crossover(self, parentA, parentB): # inheir genotype from parents
         _min = min(parentA.feature_layer_num ,parentB.feature_layer_num)

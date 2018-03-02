@@ -210,7 +210,7 @@ def nn_layer(input_tensor, result_num, layer_name, act=tf.nn.relu):
       tf.summary.histogram('pre_activations', preactivate)
     return preactivate, weights, biases
 
-def _variable_with_weight_decay(name, shape, wd, initializer, trainable=True):
+def _variable_with_weight_decay(name, wd, initial_value, trainable=True):
   """Helper to create an initialized Variable with weight decay.
 
   Note that the Variable is initialized with a truncated normal distribution.
@@ -225,41 +225,40 @@ def _variable_with_weight_decay(name, shape, wd, initializer, trainable=True):
   Returns:
     Variable Tensor
   """
-  var = _variable_on_device(name, shape, initializer, trainable)
+  var = _variable_on_device(name, initial_value, trainable)
   if wd is not None and trainable:
     weight_decay = tf.multiply(tf.nn.l2_loss(var), wd, name='weight_loss')
     tf.add_to_collection('losses', weight_decay)
   return var
 
 
-def _variable_on_device(name, shape, initializer, trainable=True):
+def _variable_on_device(name, initial_value, trainable=True):
   """Helper to create a Variable.
 
   Args:
     name: name of the variable
-    shape: list of ints
-    initializer: initializer for Variable
+    initial_value: initial value and shape for variable
 
   Returns:
     Variable Tensor
   """
   # TODO(bichen): fix the hard-coded data type below
   dtype = tf.float32
-  if not callable(initializer):
-    var = tf.get_variable(name, initializer=initializer, trainable=trainable)
-  else:
-    var = tf.get_variable(
-        name, shape, initializer=initializer, dtype=dtype, trainable=trainable)
+  var = tf.Variable(name = name, initial_value=initial_value, trainable=trainable)
   return var
 
 def _conv_layer(layer_name, input_tensor, filters, size, stride, padding ,freeze=False, relu=True, stddev=0.001):
   with tf.variable_scope(layer_name) as scope:
     channels = input_tensor.get_shape()[3]
-    kernel_init = tf.truncated_normal_initializer(stddev=stddev, dtype=tf.float32)
-    bias_init = tf.constant_initializer(0.0)
-    kernel = _variable_with_weight_decay('kernels', shape=[size, size, int(channels), filters],
-      wd=0.0001 , initializer=kernel_init, trainable=(not freeze))
-    biases = _variable_on_device('biases', [filters], bias_init, trainable=(not freeze))
+
+    #kernel_init = tf.truncated_normal_initializer(stddev=stddev, dtype=tf.float32)=
+    #bias_init = tf.constant_initializer(0.0)
+    kernel_init = tf.random_normal(shape=[size, size, int(channels), filters], stddev=stddev)
+    bias_init = tf.zeros(shape=[filters])
+
+    kernel = _variable_with_weight_decay('kernels', wd=0.0001 , initial_value=kernel_init, trainable=(not freeze))
+    biases = _variable_on_device('biases',initial_value=bias_init, trainable=(not freeze))
+
     conv = tf.nn.conv2d(input_tensor, kernel, [1, stride, stride, 1], padding=padding, name='convolution')
     conv_bias = tf.nn.bias_add(conv, biases, name='bias_add')
     if relu:

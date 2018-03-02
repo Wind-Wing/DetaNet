@@ -37,22 +37,25 @@ def load_cifar10_data():
     ts_label_cifar10[i,data[i,0]]=1.0;
   ts_data_cifar10=data[:,1:]/255.0;
   data_num_len_cifar10=len(tr_label_cifar10);
-
+  
   return tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10
 
 def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, max_steps):
 
-  candidate.display_structure()
+  #candidate.display_structure()
   # define local variables
   tr_data1=tr_data_cifar10;
   tr_label1=tr_label_cifar10;
   data_num_len1=data_num_len_cifar10;
+  max_data_len= int(data_num_len1 / FLAGS.batch_num) * FLAGS.batch_num # avoid [a:b], a will greater than b
+
   
   L = candidate.feature_layer_num + candidate.fc_layer_num + 1 # +1 for first conv layer
   M = candidate.module_num
   F = candidate.filter_num * 2  # due to filter number must be an even number
   FC = candidate.fc_layer_num
   FL = candidate.feature_layer_array
+  
   
   ## TASK 1
   sess = tf.InteractiveSession()
@@ -149,13 +152,19 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, ma
   np.random.shuffle(idx)
   tr_data1=tr_data1[idx]
   tr_label1=tr_label1[idx]
+
   acc_geo_tr=0
     # train
   for k in range(max_steps):
-    _, acc_geo_tmp = sess.run([train_step, accuracy], feed_dict={x:tr_data1[k*FLAGS.batch_num:(k+1)*FLAGS.batch_num,:],y_:tr_label1[k*FLAGS.batch_num:(k+1)*FLAGS.batch_num,:]});
+    _, acc_geo_tmp = sess.run([train_step, accuracy], feed_dict={x:tr_data1[(k*FLAGS.batch_num)%max_data_len :((k+1)*FLAGS.batch_num)%max_data_len,:],
+                                                                y_:tr_label1[(k*FLAGS.batch_num)%max_data_len :((k+1)*FLAGS.batch_num)%max_data_len,:]})
     acc_geo_tr+=acc_geo_tmp
+    if(k > 100 and k%100 ==0 ):
+      print("step %d, acc %f" % (k,acc_geo_tr / max_steps))
+
+  sess.close()
     
-  return  acc_geo_tr / max_steps
+  return acc_geo_tr / max_steps
 
 
 def main(_):
@@ -177,6 +186,7 @@ def main(_):
   _best2 = 0
   _worst1 = 0
   _worst2 = 0
+  counter = 10240
   for step in range(FLAGS.max_generations):
     # train and evaluate
     acc = []
@@ -204,7 +214,7 @@ def main(_):
     print("step: %d, acc: %f" % (step, max(acc)))
 
   candidates[best_index].display_structure()
-  final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, i, 500)
+  final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, i, FLAGS.max_step)
   print("best structure acc "+ str(final_acc))
 
 
@@ -221,12 +231,14 @@ if __name__ == '__main__':
 
   parser.add_argument('--T', type=int, default=50,
                       help='The Number of epoch per each geopath')
-  parser.add_argument('--batch_num', type=int, default=16,
+  parser.add_argument('--batch_num', type=int, default=64,
                       help='The Number of batches per each geopath')
   parser.add_argument('--candi', type=int, default=20,
                       help='The Number of Candidates of geopath, should greater than 4')
   parser.add_argument('--max_generations', type = int,default = 100,
                       help='The Generation Number of Evolution')
+  parser.add_argument('--max_step', type = int,default = 10000,
+                      help='The max training step of final structure')
 
   FLAGS, unparsed = parser.parse_known_args()
   tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
