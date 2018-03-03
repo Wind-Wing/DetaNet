@@ -211,6 +211,7 @@ def main(_):
     candidates[_worst1] = _offspring1
     candidates[_worst2] = _offspring2
  
+    candidate[best_index].display_structure()
     print("step: %d, acc: %f" % (step, max(acc)))
 
   candidates[best_index].display_structure()
@@ -235,7 +236,7 @@ if __name__ == '__main__':
                       help='The Number of batches per each geopath')
   parser.add_argument('--candi', type=int, default=20,
                       help='The Number of Candidates of geopath, should greater than 4')
-  parser.add_argument('--max_generations', type = int,default = 100,
+  parser.add_argument('--max_generations', type = int,default = 10,
                       help='The Generation Number of Evolution')
   parser.add_argument('--max_step', type = int,default = 10000,
                       help='The max training step of final structure')
