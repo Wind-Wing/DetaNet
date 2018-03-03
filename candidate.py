@@ -53,7 +53,7 @@ class Candidate:
         
         _dst = self.feature_layer_num - len(self.feature_layer_array)
         if(_dst < 0):
-            for i in range(abs(dst)):
+            for i in range(abs(_dst)):
                 del self.feature_layer_array[np.random.randint(len(self.feature_layer_array))]
         elif(_dst > 0):
             self.feature_layer_array += [np.ramdom.randint(2) for i in range(_dst)]
