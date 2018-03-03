@@ -39,12 +39,12 @@ class Candidate:
         # this random generator is based on that 
         # min_value is near 0
         # +-3*sigma value represent 99% possible
-        _value = np.random.normal(0,max_value/3.0,1)
-        _value = int(abs(_value))
+        _gap = max_value - min_value
+        _value = np.random.normal(0,_gap/3.0,1)
+        _value = int(abs(_value)) + min_value
         if _value > max_value:
             _value = max_value
-        if _value < min_value:
-            _value = min_value
+
         return _value
 
     def mutation(self): # apply mutation to this candidate
