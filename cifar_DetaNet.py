@@ -211,7 +211,7 @@ def main(_):
     candidates[_worst1] = _offspring1
     candidates[_worst2] = _offspring2
  
-    candidate[best_index].display_structure()
+    candidates[best_index].display_structure()
     print("step: %d, acc: %f" % (step, max(acc)))
 
   candidates[best_index].display_structure()
