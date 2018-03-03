@@ -187,6 +187,7 @@ def main(_):
   _worst1 = 0
   _worst2 = 0
   counter = 10240
+  best_index = 0
   for step in range(FLAGS.max_generations):
     # train and evaluate
     acc = []
@@ -212,10 +213,11 @@ def main(_):
     candidates[_worst2] = _offspring2
  
     candidates[_best1].display_structure()
+    best_index= _best1
     print("step: %d, acc: %f" % (step, max(acc)))
 
   candidates[best_index].display_structure()
-  final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, i, FLAGS.max_step)
+  final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidates[best_index], FLAGS.max_step)
   print("best structure acc "+ str(final_acc))
 
 
