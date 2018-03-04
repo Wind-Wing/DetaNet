@@ -160,7 +160,7 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, ma
                                                                 y_:tr_label1[(k*FLAGS.batch_num)%max_data_len :((k+1)*FLAGS.batch_num)%max_data_len,:]})
     acc_geo_tr+=acc_geo_tmp
     if(k > 100 and k%100 ==0 ):
-      print("step %d, acc %f" % (k,acc_geo_tr / max_steps))
+      print("step %d, acc %f" % (k,acc_geo_tr / k))
 
   sess.close()
     
