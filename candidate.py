@@ -13,29 +13,30 @@ class Candidate:
 
     # evolution argus
         # range argus
-    minFr = 2
-    maxFr = 4
+    minFr = 4
+    maxFr = 10
     minFc = 0
-    maxFc = 2
+    maxFc = 3
     minM = 6
-    maxM = 10
+    maxM = 20
     minFl = 6 / 2       # due to filter number must be an even number for fire and demonsion layer
     maxFl = 20 / 2
         # mutation argus
-    mutation_rate = 0.2
+    mutation_rate = 0.01
     
 
     # random generate candidates
     def __init__(self):
-        self.feature_layer_num = self._get_normal_random_int(self.minFr, self.maxFr)
+        self.feature_layer_num = self._get_random_int(self.minFr, self.maxFr)
         self.feature_layer_array = [np.random.randint(2) for i in range(self.feature_layer_num)] # 0 or 1 sequence
-        self.fc_layer_num = self._get_normal_random_int(self.minFc, self.maxFc)
+        self.fc_layer_num = self._get_random_int(self.minFc, self.maxFc)
 
-        self.module_num = self._get_normal_random_int(self.minM, self.maxM)
+        self.module_num = self._get_random_int(self.minM, self.maxM)
 
-        self.filter_num = self._get_normal_random_int(self.minFl, self.maxFl)
+        self.filter_num = self._get_random_int(self.minFl, self.maxFl)
     
-    def _get_normal_random_int(self, min_value, max_value):
+    def _get_random_int(self, min_value, max_value):
+        '''
         # this random generator is based on that 
         # min_value is near 0
         # +-3*sigma value represent 99% possible
@@ -44,12 +45,13 @@ class Candidate:
         _value = int(abs(_value)) + min_value
         if _value > max_value:
             _value = max_value
-
+        '''
+        _value = np.random.randint(min_value, max_value + 1)
         return _value
 
     def mutation(self): # apply mutation to this candidate
         self.feature_layer_num = int((1 - self.mutation_rate) * self.feature_layer_num
-                            + self.mutation_rate * self._get_normal_random_int(self.minFr, self.maxFr))
+                            + self.mutation_rate * self._get_random_int(self.minFr, self.maxFr))
         
         _dst = self.feature_layer_num - len(self.feature_layer_array)
         if(_dst < 0):
@@ -63,11 +65,11 @@ class Candidate:
             feature_layer_array[_index] = not feature_layer_array[_index] 
 
         self.fc_layer_num = int((1 - self.mutation_rate) * self.fc_layer_num 
-                            + self.mutation_rate * self._get_normal_random_int(self.minFc, self.maxFc))
+                            + self.mutation_rate * self._get_random_int(self.minFc, self.maxFc))
         self.module_num = int((1 - self.mutation_rate) * self.module_num
-                            + self.mutation_rate * self._get_normal_random_int(self.minM, self.maxM))
+                            + self.mutation_rate * self._get_random_int(self.minM, self.maxM))
         self.filter_num = int((1 - self.mutation_rate) * self.filter_num
-                            + self.mutation_rate * self._get_normal_random_int(self.minFl, self.maxFl))
+                            + self.mutation_rate * self._get_random_int(self.minFl, self.maxFl))
 
     def crossover(self, parentA, parentB): # inheir genotype from parents
         _min = min(parentA.feature_layer_num ,parentB.feature_layer_num)

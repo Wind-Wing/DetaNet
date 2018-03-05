@@ -47,9 +47,7 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, ma
   tr_data1=tr_data_cifar10;
   tr_label1=tr_label_cifar10;
   data_num_len1=data_num_len_cifar10;
-  max_data_len= int(data_num_len1 / FLAGS.batch_num) # avoid [a:b], a will greater than b
-
-  
+  max_data_len= int(data_num_len1 / FLAGS.batch_num)	# avoid [a:b], a will greater than b
   L = candidate.feature_layer_num + candidate.fc_layer_num + 1 # +1 for first conv layer
   M = candidate.module_num
   F = candidate.filter_num * 2  # due to filter number must be an even number
@@ -147,20 +145,19 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, ma
   tf.global_variables_initializer().run()
   
   # Learning & Evaluating
-    # Shuffle the data
+   # Shuffle the data
   idx=range(len(tr_data1))
   np.random.shuffle(idx)
   tr_data1=tr_data1[idx]
   tr_label1=tr_label1[idx]
 
-
-
+    # train
   step_list = [max_data_len for i in range(int(max_steps/max_data_len))] + [max_steps%max_data_len]
   counter = 0
   acc_geo_tr = 0
-  #print(step_list)
-  #print(max_data_len)
-  #print("max_steps: "+max_steps)
+  print(step_list)
+  print(max_data_len)
+  print(max_steps)
   for s in step_list: 
     for k in range(s):
       _, acc_geo_tmp = sess.run([train_step, accuracy], feed_dict={x:tr_data1[k*FLAGS.batch_num :(k+1)*FLAGS.batch_num,:],
@@ -168,12 +165,7 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, ma
 
       acc_geo_tr+=acc_geo_tmp
       counter+=1
-      if(counter > 100 and counter%100 ==0 ):
-        print("step %d, acc %f" % (counter,acc_geo_tr / counter))
-
-
-  
-    
+      print("step %d, acc %f" % (counter, acc_geo_tr / counter))
 
   sess.close()
     
@@ -192,46 +184,16 @@ def main(_):
   tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10 = load_cifar10_data()
 
   # ceate inti candidates
-  candidates = [Candidate() for i in range(FLAGS.candi)]
+  candidate = Candidate()
+  candidate.feature_layer_num = 2
+  candidate.feature_layer_array = [1, 0]
+  candidate.fc_layer_num = 1
+  candidate.module_num = 20
+  candidate.filter_num = 10
 
-  # evolution algo
-  _best1 = 0
-  _best2 = 0
-  _worst1 = 0
-  _worst2 = 0
-  counter = 10240
-  best_index = 0
-  for step in range(FLAGS.max_generations):
-    # train and evaluate
-    acc = []
-    for i in candidates:
-      acc += [train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, i, FLAGS.T)]
-
-    # find best and worst
-    _best1 = acc.index(sorted(acc)[-1])
-    _best2 = acc.index(sorted(acc)[-2])
-    _worst1 = acc.index(sorted(acc)[0])
-    _worst2 = acc.index(sorted(acc)[1])
-    best_index = _best1
-
-    # create offsprings
-    _offspring1 = Candidate()
-    _offspring2 = Candidate()
-    _offspring1.crossover(candidates[_best1], candidates[_best2])
-    _offspring2.crossover(candidates[_best2], candidates[_best1])
-    _offspring1.mutation()
-    _offspring2.mutation()
-
-    # survivor selection
-    candidates[_worst1] = _offspring1
-    candidates[_worst2] = _offspring2
- 
-    candidates[_best1].display_structure()
-    print("step: %d, acc: %f" % (step, max(acc)))
-
-  candidates[best_index].display_structure()
-  final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidates[best_index], FLAGS.max_step)
-  print("best structure acc "+ str(final_acc))
+  acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, FLAGS.max_step)
+  candidate.display_structure()
+  print("acc: %f" % (acc))
 
 
 if __name__ == '__main__':
@@ -242,18 +204,18 @@ if __name__ == '__main__':
   parser.add_argument('--log_dir', type=str, default='/tmp/tensorflow/DetaNet/',
                       help='Summaries log directry')
 
-  parser.add_argument('--learning_rate', type=float, default=0.1,
+  parser.add_argument('--learning_rate', type=float, default=0.2,
                       help='Initial learning rate')
 
-  parser.add_argument('--T', type=int, default=100,
+  parser.add_argument('--T', type=int, default=50,
                       help='The Number of epoch per each geopath')
   parser.add_argument('--batch_num', type=int, default=64,
                       help='The Number of batches per each geopath')
-  parser.add_argument('--candi', type=int, default=10,
+  parser.add_argument('--candi', type=int, default=20,
                       help='The Number of Candidates of geopath, should greater than 4')
   parser.add_argument('--max_generations', type = int,default = 10,
                       help='The Generation Number of Evolution')
-  parser.add_argument('--max_step', type = int,default = 100000,
+  parser.add_argument('--max_step', type = int,default = 10000,
                       help='The max training step of final structure')
 
   FLAGS, unparsed = parser.parse_known_args()
