@@ -2,15 +2,6 @@ import numpy as np
 
 class Candidate:
     ''' A data struct to restore candidate struct info during evoluation algo. '''
-    # struct level 1
-    feature_layer_num = 0  # feature abstract layers numbers
-    feature_layer_array = [0 for i in range(feature_layer_num)] # 0 means conv layer, 1 means pool layer
-    fc_layer_num = 0       # full connection layers numbers
-    # struct level 2
-    module_num = 0         # modules in each layer
-    # struct level 3
-    filter_num = 0          # filters in each module, must be an even number
-
     # evolution argus
         # range argus
     minFr = 4
@@ -22,7 +13,17 @@ class Candidate:
     minFl = 6 / 2       # due to filter number must be an even number for fire and demonsion layer
     maxFl = 20 / 2
         # mutation argus
-    mutation_rate = 0.01
+    mutation_rate = 0.4
+
+    # struct level 1
+    feature_layer_num = 0  # feature abstract layers numbers
+    feature_layer_array = [0 for i in range(feature_layer_num)] # 0 means conv layer, 1 means pool layer
+    disable_mask = [0 for i in range(maxFr)]        # disable input is 1*1's Dimensionality_reduction_module
+    fc_layer_num = 0       # full connection layers numbers
+    # struct level 2
+    module_num = 0         # modules in each layer
+    # struct level 3
+    filter_num = 0          # filters in each module, must be an even number
     
 
     # random generate candidates
@@ -34,6 +35,7 @@ class Candidate:
         self.module_num = self._get_random_int(self.minM, self.maxM)
 
         self.filter_num = self._get_random_int(self.minFl, self.maxFl)
+
     
     def _get_random_int(self, min_value, max_value):
         '''
@@ -62,7 +64,7 @@ class Candidate:
 
         for i in range(int(self.mutation_rate * len(self.feature_layer_array))):
             _index = np.random.randint(len(self.feature_layer_array))
-            feature_layer_array[_index] = not feature_layer_array[_index] 
+            self.feature_layer_array[_index] = not self.feature_layer_array[_index] 
 
         self.fc_layer_num = int((1 - self.mutation_rate) * self.fc_layer_num 
                             + self.mutation_rate * self._get_random_int(self.minFc, self.maxFc))
@@ -91,7 +93,7 @@ class Candidate:
 
     def display_structure(self): # show network struct info represented by this candidate
         print("feature array, 0 - conv and 1 - pooling: ")
-        print(self.feature_layer_array)
+        print([self.feature_layer_array[i] for i in range(self.feature_layer_num) if self.disable_mask[i] != 1])
         print("full connection layer number: ")
         print(self.fc_layer_num)
         print("module number in each layer: ")

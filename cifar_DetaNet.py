@@ -97,6 +97,11 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, ma
       for j in range(M):
         layer_modules_list[j], weights_list[i + 1,j], biases_list[i + 1,j] = pathnet.res_fire_layer(net, geopath[i + 1,j], 'res_fire_layer'+str(i+2)+"_"+str(j+1))
     else:
+      # check dimension_reduction input whether to small 1*1
+      if int(net.get_shape()[1]) == 1 and int(net.get_shape()[2]) == 1:
+        candidate.disable_mask[i] = 1
+        continue
+
       for j in range(M):
         layer_modules_list[j], weights_list[i + 1,j], biases_list[i + 1,j] = pathnet.Dimensionality_reduction_module(net, geopath[i + 1,j], 'dimension_reduction_layer'+str(i+2)+"_"+str(j+1))    
     net=np.sum(layer_modules_list)/ M    
@@ -127,6 +132,9 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, ma
   # Need to learn variables
   var_list_to_learn=[]+output_weights+output_biases;
   for i in range(L):
+    # disabled layer don't have argvs to learn
+    if i > 0 and i < candidate.maxFr+1 and candidate.disable_mask[i-1] == 1:
+      continue
     for j in range(M):
       if (fixed_list[i,j]=='0'):
         var_list_to_learn+=weights_list[i,j]+biases_list[i,j];
@@ -153,8 +161,6 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, ma
   tr_data1=tr_data1[idx]
   tr_label1=tr_label1[idx]
 
-
-
   step_list = [max_data_len for i in range(int(max_steps/max_data_len))] + [max_steps%max_data_len]
   counter = 0
   acc_geo_tr = 0
@@ -169,11 +175,7 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, ma
       acc_geo_tr+=acc_geo_tmp
       counter+=1
       if(counter > 100 and counter%100 ==0 ):
-        print("step %d, acc %f" % (counter,acc_geo_tr / counter))
-
-
-  
-    
+        print("step %d, acc %f" % (counter , acc_geo_tmp))
 
   sess.close()
     
