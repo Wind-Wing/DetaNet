@@ -50,10 +50,10 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, ma
   max_data_len= int(data_num_len1 / FLAGS.batch_num) # avoid [a:b], a will greater than b
 
   
-  L = candidate.feature_layer_num + candidate.fc_layer_num + 1 # +1 for first conv layer
-  M = candidate.module_num
-  F = candidate.filter_num * 2  # due to filter number must be an even number
-  FC = candidate.fc_layer_num
+  L = int(candidate.feature_layer_num + candidate.fc_layer_num + 1) # +1 for first conv layer
+  M = int(candidate.module_num)
+  F = int(candidate.filter_num) * 2  # due to filter number must be an even number
+  FC = int(candidate.fc_layer_num)
   FL = candidate.feature_layer_array
   
   
@@ -156,10 +156,10 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, ma
   
   # Learning & Evaluating
     # Shuffle the data
-  idx=range(len(tr_data1))
-  np.random.shuffle(idx)
-  tr_data1=tr_data1[idx]
-  tr_label1=tr_label1[idx]
+  #idx=range(len(tr_data1))
+  #np.random.shuffle(idx)
+  #tr_data1=tr_data1[idx]
+  #tr_label1=tr_label1[idx]
 
   step_list = [max_data_len for i in range(int(max_steps/max_data_len))] + [max_steps%max_data_len]
   counter = 0
@@ -168,6 +168,10 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, ma
   #print(max_data_len)
   #print("max_steps: "+max_steps)
   for s in step_list: 
+    idx=range(len(tr_data1))
+    np.random.shuffle(idx)
+    tr_data1=tr_data1[idx]
+    tr_label1=tr_label1[idx]
     for k in range(s):
       _, acc_geo_tmp = sess.run([train_step, accuracy], feed_dict={x:tr_data1[k*FLAGS.batch_num :(k+1)*FLAGS.batch_num,:],
                                                                 y_:tr_label1[k*FLAGS.batch_num :(k+1)*FLAGS.batch_num,:]})
@@ -234,6 +238,8 @@ def main(_):
   candidates[best_index].display_structure()
   final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidates[best_index], FLAGS.max_step)
   print("best structure avg_acc "+ str(final_acc))
+  candidates[best_index].display_structure()
+
 
 
 if __name__ == '__main__':

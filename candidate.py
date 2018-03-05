@@ -28,16 +28,16 @@ class Candidate:
 
     # random generate candidates
     def __init__(self):
-        self.feature_layer_num = self._get_random_int(self.minFr, self.maxFr)
-        self.feature_layer_array = [np.random.randint(2) for i in range(self.feature_layer_num)] # 0 or 1 sequence
-        self.fc_layer_num = self._get_random_int(self.minFc, self.maxFc)
+        self.feature_layer_num = self._get_random_num(self.minFr, self.maxFr)
+        self.feature_layer_array = [np.random.randint(2) for i in range(int(self.feature_layer_num))] # 0 or 1 sequence
+        self.fc_layer_num = self._get_random_num(self.minFc, self.maxFc)
 
-        self.module_num = self._get_random_int(self.minM, self.maxM)
+        self.module_num = self._get_random_num(self.minM, self.maxM)
 
-        self.filter_num = self._get_random_int(self.minFl, self.maxFl)
+        self.filter_num = self._get_random_num(self.minFl, self.maxFl)
 
     
-    def _get_random_int(self, min_value, max_value):
+    def _get_random_num(self, min_value, max_value, init=True ):
         '''
         # this random generator is based on that 
         # min_value is near 0
@@ -48,14 +48,17 @@ class Candidate:
         if _value > max_value:
             _value = max_value
         '''
-        _value = np.random.randint(min_value, max_value + 1)
+        if(init == True):
+            _value = np.random.rand() * (max_value - min_value + 1) + min_value 
+        else:
+            _value = np.random.rand() * (max_value - min_value) + min_value 
         return _value
 
     def mutation(self): # apply mutation to this candidate
-        self.feature_layer_num = int((1 - self.mutation_rate) * self.feature_layer_num
-                            + self.mutation_rate * self._get_random_int(self.minFr, self.maxFr))
+        self.feature_layer_num = (1 - self.mutation_rate) * self.feature_layer_num
+                            + self.mutation_rate * self._get_random_num(self.minFr, self.maxFr)
         
-        _dst = self.feature_layer_num - len(self.feature_layer_array)
+        _dst = int(self.feature_layer_num) - len(self.feature_layer_array)
         if(_dst < 0):
             for i in range(abs(_dst)):
                 del self.feature_layer_array[np.random.randint(len(self.feature_layer_array))]
@@ -66,37 +69,37 @@ class Candidate:
             _index = np.random.randint(len(self.feature_layer_array))
             self.feature_layer_array[_index] = not self.feature_layer_array[_index] 
 
-        self.fc_layer_num = int((1 - self.mutation_rate) * self.fc_layer_num 
-                            + self.mutation_rate * self._get_random_int(self.minFc, self.maxFc))
-        self.module_num = int((1 - self.mutation_rate) * self.module_num
-                            + self.mutation_rate * self._get_random_int(self.minM, self.maxM))
-        self.filter_num = int((1 - self.mutation_rate) * self.filter_num
-                            + self.mutation_rate * self._get_random_int(self.minFl, self.maxFl))
+        self.fc_layer_num = (1 - self.mutation_rate) * self.fc_layer_num 
+                            + self.mutation_rate * self._get_random_num(self.minFc, self.maxFc)
+        self.module_num = (1 - self.mutation_rate) * self.module_num
+                            + self.mutation_rate * self._get_random_num(self.minM, self.maxM)
+        self.filter_num = (1 - self.mutation_rate) * self.filter_num
+                            + self.mutation_rate * self._get_random_num(self.minFl, self.maxFl)
 
     def crossover(self, parentA, parentB): # inheir genotype from parents
-        _min = min(parentA.feature_layer_num ,parentB.feature_layer_num)
+        _min = int(min(parentA.feature_layer_num ,parentB.feature_layer_num))
         cross_point = np.random.randint(_min)
         self.feature_layer_num = parentB.feature_layer_num
         self.feature_layer_array = parentA.feature_layer_array[:cross_point] + parentB.feature_layer_array[cross_point:]
 
         _min = min(parentA.fc_layer_num, parentB.fc_layer_num)
         _max = max(parentA.fc_layer_num, parentB.fc_layer_num)
-        self.fc_layer_num = np.random.randint(_min, _max + 1)
+        self.fc_layer_num = _get_random_num(_min, _max, False)
 
         _min = min(parentA.module_num, parentB.module_num)
         _max = max(parentA.module_num, parentB.module_num)
-        self.module_num = np.random.randint(_min, _max + 1)
+        self.fc_layer_num = _get_random_num(_min, _max, False)
 
         _min = min(parentA.filter_num, parentB.filter_num)
         _max = max(parentA.filter_num, parentB.filter_num)
-        self.filter_num = np.random.randint(_min, _max + 1)
+        self.fc_layer_num = _get_random_num(_min, _max, False)
 
     def display_structure(self): # show network struct info represented by this candidate
         print("feature array, 0 - conv and 1 - pooling: ")
-        print([self.feature_layer_array[i] for i in range(self.feature_layer_num) if self.disable_mask[i] != 1])
+        print([self.feature_layer_array[i] for i in range(int(self.feature_layer_num)) if self.disable_mask[i] != 1])
         print("full connection layer number: ")
-        print(self.fc_layer_num)
+        print(int(self.fc_layer_num))
         print("module number in each layer: ")
-        print(self.module_num)
+        print(int(self.module_num))
         print("filter number in each module: ")
-        print(self.filter_num  * 2)
+        print(int(self.filter_num)  * 2)
