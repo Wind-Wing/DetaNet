@@ -175,7 +175,7 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, ma
       acc_geo_tr+=acc_geo_tmp
       counter+=1
       if(counter > 100 and counter%100 ==0 ):
-        print("step %d, acc %f" % (counter , acc_geo_tmp))
+        print("step %d, single_acc %f" % (counter , acc_geo_tmp))
 
   sess.close()
     
@@ -229,11 +229,11 @@ def main(_):
     candidates[_worst2] = _offspring2
  
     candidates[_best1].display_structure()
-    print("step: %d, acc: %f" % (step, max(acc)))
+    print("generation: %d, avg_acc: %f" % (step, max(acc)))
 
   candidates[best_index].display_structure()
   final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidates[best_index], FLAGS.max_step)
-  print("best structure acc "+ str(final_acc))
+  print("best structure avg_acc "+ str(final_acc))
 
 
 if __name__ == '__main__':
@@ -244,7 +244,7 @@ if __name__ == '__main__':
   parser.add_argument('--log_dir', type=str, default='/tmp/tensorflow/DetaNet/',
                       help='Summaries log directry')
 
-  parser.add_argument('--learning_rate', type=float, default=0.1,
+  parser.add_argument('--learning_rate', type=float, default=0.001,
                       help='Initial learning rate')
 
   parser.add_argument('--T', type=int, default=100,

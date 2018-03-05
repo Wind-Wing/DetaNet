@@ -13,7 +13,7 @@ class Candidate:
     minFl = 6 / 2       # due to filter number must be an even number for fire and demonsion layer
     maxFl = 20 / 2
         # mutation argus
-    mutation_rate = 0.4
+    mutation_rate = 0.2
 
     # struct level 1
     feature_layer_num = 0  # feature abstract layers numbers
@@ -60,7 +60,7 @@ class Candidate:
             for i in range(abs(_dst)):
                 del self.feature_layer_array[np.random.randint(len(self.feature_layer_array))]
         elif(_dst > 0):
-            self.feature_layer_array += [np.ramdom.randint(2) for i in range(_dst)]
+            self.feature_layer_array += [np.random.randint(2) for i in range(_dst)]
 
         for i in range(int(self.mutation_rate * len(self.feature_layer_array))):
             _index = np.random.randint(len(self.feature_layer_array))
