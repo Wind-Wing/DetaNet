@@ -377,7 +377,7 @@ def res_module(input_tensor, is_active, layer_name, stddev=0.01, freeze=False):
   kernels = []
   biases = []
 
-  channels = input_tensor.get_shape()[3]
+  channels = int(input_tensor.get_shape()[3])
   feature_map_of_firstlayer, _kernel, _bias = _conv_layer(layer_name+'/first_layer', input_tensor, filters=channels, size= 3, stride=1,
     padding='SAME', stddev=stddev, freeze=freeze)
   kernels.append(_kernel)
