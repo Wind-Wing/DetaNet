@@ -95,7 +95,9 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, ma
   for j in range(M):
     layer_modules_list[j], weights_list[0,j], biases_list[0,j] = pathnet.conv_module(image_shaped_input, F, [5,5], geopath[0,j], 1,  'conv_layer'+str(0+1)+"_"+str(j+1))
 
-  net=np.sum(map(lambda (a,b):a*b[0], zip(layer_modules_list , sum_weights_list[0])))/ M
+  #net=np.sum(map(lambda (a,b):a*b[0], zip(layer_modules_list , sum_weights_list[0])))/ M
+  net=np.sum(layer_modules_list)/M
+
 
   # feature abstract layers
   for i in range(len(FL)):
@@ -110,7 +112,8 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, ma
 
       for j in range(M):
         layer_modules_list[j], weights_list[i + 1,j], biases_list[i + 1,j] = pathnet.Dimensionality_reduction_module(net, geopath[i + 1,j], 'dimension_reduction_layer'+str(i+2)+"_"+str(j+1))    
-    net=np.sum(map(lambda (a,b):a*b[0], zip(layer_modules_list , sum_weights_list[i+1])))/ M
+    #net=np.sum(map(lambda (a,b):a*b[0], zip(layer_modules_list , sum_weights_list[i+1])))/ M
+    net=np.sum(layer_modules_list)/M
 
   # full connection layer
     # reshape
@@ -124,7 +127,8 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, ma
   for i in range(L)[len(FL)+1:]:
     for j in range(M):
       layer_modules_list[j], weights_list[i,j], biases_list[i, j] = pathnet.fc_layer(net, F, geopath[i,j], 'fc_layer'+str(i+1)+"_"+str(j+1))
-    net=np.sum(map(lambda (a,b):a*b[0], zip(layer_modules_list , sum_weights_list[i])))/ M   
+    #net=np.sum(map(lambda (a,b):a*b[0], zip(layer_modules_list , sum_weights_list[i])))/ M   
+    net=np.sum(layer_modules_list)/M
 
   # output layer
   y, output_weights ,output_biases = pathnet.nn_layer(net, 10, 'output_layer'+str(i))
@@ -143,7 +147,7 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, ma
       continue
     for j in range(M):
       if (fixed_list[i,j]=='0'):
-        var_list_to_learn+=weights_list[i,j]+biases_list[i,j]+sum_weights_list[i,j]
+        var_list_to_learn+=weights_list[i,j]+biases_list[i,j]#+sum_weights_list[i,j]
   
   # GradientDescent 
   with tf.name_scope('train'):
