@@ -17,30 +17,34 @@ FLAGS = None
 
 def load_cifar10_data():
   # Get CIFAR 10  dataset
-  cifar10.maybe_download_and_extract();
-  tr_label_cifar10=np.zeros((50000,10),dtype=float);
-  ts_label_cifar10=np.zeros((10000,10),dtype=float);
-  for i in range(1,6):
-    file_name=os.path.join(FLAGS.cifar_data_dir,"data_batch_"+str(i)+".bin");
-    f = open(file_name,"rb");
-    data=np.reshape(bytearray(f.read()),[10000,3073]);
-    if(i==1):
-      tr_data_cifar10=data[:,1:]/255.0;
-    else:
-      tr_data_cifar10=np.append(tr_data_cifar10,data[:,1:]/255.0,axis=0);
-    for j in range(len(data)):
-      tr_label_cifar10[(i-1)*10000+j,data[j,0]]=1.0;
-  file_name=os.path.join(FLAGS.cifar_data_dir,"test_batch.bin");
-  f = open(file_name,"rb");
-  data=np.reshape(bytearray(f.read()),[10000,3073]);
-  for i in range(len(data)):
-    ts_label_cifar10[i,data[i,0]]=1.0;
-  ts_data_cifar10=data[:,1:]/255.0;
-  data_num_len_cifar10=len(tr_label_cifar10);
-  
-  return tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10
+  cifar10.maybe_download_and_extract()
+  tr_label_cifar10=np.zeros((50000,10),dtype=float)
+  ts_label_cifar10=np.zeros((10000,10),dtype=float)
 
-def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, max_steps):
+  for i in range(1,6):
+    file_name=os.path.join(FLAGS.cifar_data_dir,"data_batch_"+str(i)+".bin")
+    f = open(file_name,"rb")
+    data=np.reshape(bytearray(f.read()),[10000,3073])
+    if(i==1):
+      tr_data_cifar10=data[:,1:]/255.0
+    else:
+      tr_data_cifar10=np.append(tr_data_cifar10,data[:,1:]/255.0,axis=0)
+    for j in range(len(data)):
+      tr_label_cifar10[(i-1)*10000+j,data[j,0]]=1.0
+
+  file_name=os.path.join(FLAGS.cifar_data_dir,"test_batch.bin")
+  f = open(file_name,"rb")
+  data=np.reshape(bytearray(f.read()),[10000,3073])
+  for i in range(len(data)):
+    ts_label_cifar10[i,data[i,0]]=1.0
+  ts_data_cifar10=data[:,1:]/255.0
+
+  data_num_len_cifar10=len(tr_label_cifar10)
+  ts_num_len_cifar10=len(ts_label_cifar10)
+  
+  return tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar10, ts_label_cifar10, ts_num_len_cifar10
+
+def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar10, ts_label_cifar10, ts_num_len_cifar10, candidate, max_steps):
 
   #candidate.display_structure()
   # define local variables
@@ -48,6 +52,10 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, ma
   tr_label1=tr_label_cifar10;
   data_num_len1=data_num_len_cifar10;
   max_data_len= int(data_num_len1 / FLAGS.batch_num) # avoid [a:b], a will greater than b
+
+  ts_data1= ts_data_cifar10
+  ts_label1= ts_label_cifar10
+  ts_num_len1= ts_num_len_cifar10
 
   
   L = int(candidate.feature_layer_num + candidate.fc_layer_num + 1) # +1 for first conv layer
@@ -156,7 +164,6 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, ma
       correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
     with tf.name_scope('accuracy'):
       accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-  tf.summary.scalar('accuracy', accuracy)
 
   # init
   tf.global_variables_initializer().run()
@@ -189,6 +196,11 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, ma
       if(counter > 100 and counter%1000 ==0 ):
         print("step %d, single_acc %f" % (counter , acc_geo_tmp))
 
+      # test on test set
+      if(counter%10000 == 0):
+        test_acc = sess.run(accuracy, feed_dict={x:ts_data1, y_:ts_label1})
+        print("step %d, acc_on_test_set %f" %(counter, test_acc))
+
 
   sess.close()
     
@@ -204,7 +216,7 @@ def main(_):
   tf.gfile.MakeDirs(FLAGS.log_dir)
 
   # read cifar10 dataset
-  tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10 = load_cifar10_data()
+  tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar10, ts_label_cifar10, ts_num_len_cifar10 = load_cifar10_data()
 
 
   # ceate inti candidates
@@ -217,7 +229,7 @@ def main(_):
   candidate1.module_num = 2         
   candidate1.filter_num = 10 
 
-  final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate1, FLAGS.max_step)
+  final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar10, ts_label_cifar10, ts_num_len_cifar10, candidate1, FLAGS.max_step)
   print("best structure1 avg_acc "+ str(final_acc))
   candidate1.display_structure()
 
@@ -232,7 +244,7 @@ def main(_):
   candidate2.module_num = 3         
   candidate2.filter_num = 10 
 
-  final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate2, FLAGS.max_step)
+  final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar10, ts_label_cifar10, ts_num_len_cifar10, candidate2, FLAGS.max_step)
   print("best structure2 avg_acc "+ str(final_acc))
   candidate2.display_structure()
 
@@ -247,7 +259,7 @@ def main(_):
   candidate3.module_num = 4         
   candidate3.filter_num = 10 
 
-  final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate3, FLAGS.max_step)
+  final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar10, ts_label_cifar10, ts_num_len_cifar10, candidate3, FLAGS.max_step)
   print("best structure3 avg_acc "+ str(final_acc))
   candidate3.display_structure()
 
@@ -262,7 +274,7 @@ def main(_):
   candidate4.module_num = 5         
   candidate4.filter_num = 16 
 
-  final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate4, FLAGS.max_step)
+  final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar10, ts_label_cifar10, ts_num_len_cifar10, candidate4, FLAGS.max_step)
   print("best structure4 avg_acc "+ str(final_acc))
   candidate4.display_structure()
 
@@ -277,7 +289,7 @@ def main(_):
   candidate5.module_num = 3         
   candidate5.filter_num = 16
 
-  final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate5, FLAGS.max_step)
+  final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar10, ts_label_cifar10, ts_num_len_cifar10, candidate5, FLAGS.max_step)
   print("best structure5 avg_acc "+ str(final_acc))
   candidate5.display_structure()
 
