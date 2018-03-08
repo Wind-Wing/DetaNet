@@ -85,15 +85,16 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, ma
   sum_weights_list=np.zeros((L,M), dtype=object)
   for i in range(L):
     for j in range(M):
-      initial = tf.truncated_normal(shape=[1], mean=1, stddev=0.1)
-      sum_weights_list[i,j]= [tf.Variable(initial)];
+      _initial1 = tf.truncated_normal(shape=[1], mean=1, stddev=0.1)
+      _initial2 = tf.truncated_normal(shape=[1], mean=1, stddev=0.1)
+      sum_weights_list[i,j]= [tf.Variable(_initial1), tf.Variable(_initial2)]
 
   ## model define
   layer_modules_list=np.zeros(M,dtype=object)
 
   # first layer: conv 
   for j in range(M):
-    layer_modules_list[j], weights_list[0,j], biases_list[0,j] = pathnet.conv_module(image_shaped_input, F, [5,5], geopath[0,j], 1,  'conv_layer'+str(0+1)+"_"+str(j+1))
+    layer_modules_list[j], weights_list[0,j], biases_list[0,j] = pathnet.conv_module(sum_weights_list[0][j][1] * image_shaped_input, F, [5,5], geopath[0,j], 1,  'conv_layer'+str(0+1)+"_"+str(j+1))
 
   net=np.sum(map(lambda (a,b):a*b[0], zip(layer_modules_list , sum_weights_list[0])))/ M
 
@@ -101,7 +102,7 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, ma
   for i in range(len(FL)):
     if FL[i] == 0:
       for j in range(M):
-        layer_modules_list[j], weights_list[i + 1,j], biases_list[i + 1,j] = pathnet.res_fire_layer(net, geopath[i + 1,j], 'res_fire_layer'+str(i+2)+"_"+str(j+1))
+        layer_modules_list[j], weights_list[i + 1,j], biases_list[i + 1,j] = pathnet.res_fire_layer(sum_weights_list[i+1,j][1] * net, geopath[i + 1,j], 'res_fire_layer'+str(i+2)+"_"+str(j+1))
     else:
       # check dimension_reduction input whether to small 1*1
       if int(net.get_shape()[1]) == 1 and int(net.get_shape()[2]) == 1:
@@ -109,7 +110,7 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, ma
         continue
 
       for j in range(M):
-        layer_modules_list[j], weights_list[i + 1,j], biases_list[i + 1,j] = pathnet.Dimensionality_reduction_module(net, geopath[i + 1,j], 'dimension_reduction_layer'+str(i+2)+"_"+str(j+1))    
+        layer_modules_list[j], weights_list[i + 1,j], biases_list[i + 1,j] = pathnet.Dimensionality_reduction_module(sum_weights_list[i+1,j][1] * net, geopath[i + 1,j], 'dimension_reduction_layer'+str(i+2)+"_"+str(j+1))    
     net=np.sum(map(lambda (a,b):a*b[0], zip(layer_modules_list , sum_weights_list[i+1])))/ M
 
   # full connection layer
@@ -123,7 +124,7 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, ma
     # full connection
   for i in range(L)[len(FL)+1:]:
     for j in range(M):
-      layer_modules_list[j], weights_list[i,j], biases_list[i, j] = pathnet.fc_layer(net, F, geopath[i,j], 'fc_layer'+str(i+1)+"_"+str(j+1))
+      layer_modules_list[j], weights_list[i,j], biases_list[i, j] = pathnet.fc_layer(sum_weights_list[i][j][1] * net, F, geopath[i,j], 'fc_layer'+str(i+1)+"_"+str(j+1))
     net=np.sum(map(lambda (a,b):a*b[0], zip(layer_modules_list , sum_weights_list[i])))/ M   
 
   # output layer
