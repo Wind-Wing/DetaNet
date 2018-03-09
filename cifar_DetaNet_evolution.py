@@ -195,21 +195,16 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar
 
       acc_geo_tr+=acc_geo_tmp
       counter+=1
-      if(counter > 100 and counter%1000 ==0 ):
+      if(counter > 1 and counter%1000 ==0 and max_steps > FLAGS.T):
         print("step %d, single_acc %f" % (counter , acc_geo_tmp))
 
       # test on test set
-      if(counter%100 == 0):
-        _acc = 0
-        for i in range(10):
-          test_acc = sess.run(accuracy, feed_dict={x:ts_data1[i*1000:(i+1)*1000,:], y_:ts_label1[i*1000:(i+1)*1000,:],keep_prob:1})
-          _acc += test_acc
-        _acc /= 10
+      if(counter > 1 and counter%100 == 0 and max_steps > FLAGS.T):
+        test_acc = sess.run(accuracy, feed_dict={x:ts_data1, y_:ts_label1,keep_prob:1})
         print("step %d, acc_on_test_set %f" %(counter, test_acc))
 
 
   sess.close()
-    
   return acc_geo_tr / max_steps
 
 
@@ -224,7 +219,7 @@ def main(_):
   # read cifar10 dataset
   tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar10, ts_label_cifar10, ts_num_len_cifar10 = load_cifar10_data()
 
-  # ceate inti candidates
+# ceate inti candidates
   candidates = [Candidate() for i in range(FLAGS.candi)]
 
   # evolution algo
@@ -232,12 +227,14 @@ def main(_):
   _best2 = 0
   _worst1 = 0
   _worst2 = 0
+  counter = 10240
   best_index = 0
   for step in range(FLAGS.max_generations):
     # train and evaluate
+    _start_time = time.time()
     acc = []
     for i in candidates:
-      acc += [train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, i, FLAGS.T)]
+      acc += [train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar10, ts_label_cifar10, ts_num_len_cifar10, i, FLAGS.T)]
 
     # find best and worst
     _best1 = acc.index(sorted(acc)[-1])
@@ -258,14 +255,16 @@ def main(_):
     candidates[_worst1] = _offspring1
     candidates[_worst2] = _offspring2
  
+    _time_cost = time.time() - _start_time
+    print(acc)
     candidates[_best1].display_structure()
-    print("generation: %d, avg_acc: %f" % (step, max(acc)))
+    print("generation: %d, avg_acc: %f, time_cost: %f s" % (step, max(acc), _time_cost))
 
   candidates[best_index].display_structure()
-  final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar10, ts_label_cifar10, ts_num_len_cifar10, candidate5, FLAGS.max_step)  
+  final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar10, ts_label_cifar10, ts_num_len_cifar10, candidates[best_index], FLAGS.max_step)
+
   print("best structure avg_acc "+ str(final_acc))
   candidates[best_index].display_structure()
-
   compurtation_of_network = candidates[best_index].compurtation_of_network()
   print("===========================================================")
   print("compurtation_of_network :  " +  str(   )+ str(compurtation_of_network))

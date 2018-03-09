@@ -200,11 +200,7 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar
 
       # test on test set
       if(counter%100 == 0):
-        _acc = 0
-        for i in range(10):
-          test_acc = sess.run(accuracy, feed_dict={x:ts_data1[i*1000:(i+1)*1000,:], y_:ts_label1[i*1000:(i+1)*1000,:],keep_prob:1})
-          _acc += test_acc
-        _acc /= 10
+        test_acc = sess.run(accuracy, feed_dict={x:ts_data1, y_:ts_label1,keep_prob:1})
         print("step %d, acc_on_test_set %f" %(counter, test_acc))
 
 
