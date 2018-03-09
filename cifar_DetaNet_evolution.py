@@ -222,109 +222,53 @@ def main(_):
   tf.gfile.MakeDirs(FLAGS.log_dir)
 
   # read cifar10 dataset
- # read cifar10 dataset
   tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar10, ts_label_cifar10, ts_num_len_cifar10 = load_cifar10_data()
 
+  # ceate inti candidates
+  candidates = [Candidate() for i in range(FLAGS.candi)]
 
-  # # ceate inti candidates
-  # candidate1 = Candidate()
-  
-  # # set your structurs here
-  # candidate1.feature_layer_num = 3
-  # candidate1.feature_layer_array = [1, 0, 1] 
-  # candidate1.fc_layer_num = 0       
-  # candidate1.module_num = 2         
-  # candidate1.filter_num = 10 
+  # evolution algo
+  _best1 = 0
+  _best2 = 0
+  _worst1 = 0
+  _worst2 = 0
+  best_index = 0
+  for step in range(FLAGS.max_generations):
+    # train and evaluate
+    acc = []
+    for i in candidates:
+      acc += [train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, i, FLAGS.T)]
 
-  # compurtation_of_network_1 = candidate1.compurtation_of_network()
-  # print("===========================================================")
-  # print("compurtation_of_network_1 :  " +  str(   )+ str(compurtation_of_network_1))
+    # find best and worst
+    _best1 = acc.index(sorted(acc)[-1])
+    _best2 = acc.index(sorted(acc)[-2])
+    _worst1 = acc.index(sorted(acc)[0])
+    _worst2 = acc.index(sorted(acc)[1])
+    best_index = _best1
 
-  # final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate1, FLAGS.max_step)
-  # print("best structure1 avg_acc "+ str(final_acc))
-  # candidate1.display_structure()
+    # create offsprings
+    _offspring1 = Candidate()
+    _offspring2 = Candidate()
+    _offspring1.crossover(candidates[_best1], candidates[_best2])
+    _offspring2.crossover(candidates[_best2], candidates[_best1])
+    _offspring1.mutation()
+    _offspring2.mutation()
 
+    # survivor selection
+    candidates[_worst1] = _offspring1
+    candidates[_worst2] = _offspring2
+ 
+    candidates[_best1].display_structure()
+    print("generation: %d, avg_acc: %f" % (step, max(acc)))
 
-  # # ceate inti candidates
-  # candidate2 = Candidate()
-  
-  # # set your structurs here
-  # candidate2.feature_layer_num = 4
-  # candidate2.feature_layer_array = [1, 0, 1, 0] 
-  # candidate2.fc_layer_num = 1       
-  # candidate2.module_num = 3         
-  # candidate2.filter_num = 10 
-
-
-  # compurtation_of_network_2 = candidate2.compurtation_of_network()
-  # print("===========================================================")
-  # print("compurtation_of_network_2 :  " +  str(   )+ str(compurtation_of_network_2))
-
-
-  # final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar10, ts_label_cifar10, ts_num_len_cifar10, candidate2, FLAGS.max_step)  
-  # print("best structure2 avg_acc "+ str(final_acc))
-  # candidate2.display_structure()
-
-
-  # # ceate inti candidates
-  # candidate3 = Candidate()
-  
-  # # set your structurs here
-  # candidate3.feature_layer_num = 5
-  # candidate3.feature_layer_array = [1, 0, 1, 0, 1] 
-  # candidate3.fc_layer_num = 2       
-  # candidate3.module_num = 4         
-  # candidate3.filter_num = 10 
-
-  # compurtation_of_network_3 = candidate3.compurtation_of_network()
-  # print("===========================================================")
-  # print("compurtation_of_network_3 :  " +  str(   )+ str(compurtation_of_network_3))
-
-  # final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate3, FLAGS.max_step)
-  # print("best structure3 avg_acc "+ str(final_acc))
-  # candidate3.display_structure()
-
-
-  #   # ceate inti candidates
-  # candidate4 = Candidate()
-  
-  # # set your structurs here
-  # candidate4.feature_layer_num = 5
-  # candidate4.feature_layer_array = [1, 0, 1, 0, 1] 
-  # candidate4.fc_layer_num = 2       
-  # candidate4.module_num = 5         
-  # candidate4.filter_num = 16 
-
-  # compurtation_of_network_4 = candidate4.compurtation_of_network()
-  # print("===========================================================")
-  # print("compurtation_of_network_4 :  " +  str(   )+ str(compurtation_of_network_4))
-
-  # final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate4, FLAGS.max_step)
-  # print("best structure4 avg_acc "+ str(final_acc))
-  # candidate4.display_structure()
-
-
-    # ceate inti candidates
-  candidate5 = Candidate()
-  
-  # set your structurs here
-  candidate5.feature_layer_num = 7
-  candidate5.feature_layer_array = [1, 0, 1, 0, 1, 0, 0] 
-  candidate5.fc_layer_num = 3       
-  candidate5.module_num = 3         
-  candidate5.filter_num = 16
-
-
-  compurtation_of_network_5 = candidate5.compurtation_of_network()
-  print("===========================================================")
-  print("compurtation_of_network_5 :  " +  str(   )+ str(compurtation_of_network_5))
-
-
+  candidates[best_index].display_structure()
   final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar10, ts_label_cifar10, ts_num_len_cifar10, candidate5, FLAGS.max_step)  
-  print("best structure5 avg_acc "+ str(final_acc))
-  candidate5.display_structure()
+  print("best structure avg_acc "+ str(final_acc))
+  candidates[best_index].display_structure()
 
-
+  compurtation_of_network = candidates[best_index].compurtation_of_network()
+  print("===========================================================")
+  print("compurtation_of_network :  " +  str(   )+ str(compurtation_of_network))
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
@@ -333,11 +277,9 @@ if __name__ == '__main__':
                       help='Directory for storing input data')
   parser.add_argument('--log_dir', type=str, default='/tmp/tensorflow/DetaNet/',
                       help='Summaries log directry')
-
   parser.add_argument('--learning_rate', type=float, default=0.01,
                       help='Initial learning rate')
-
-  parser.add_argument('--T', type=int, default=10,
+  parser.add_argument('--T', type=int, default=2000,
                       help='The Number of epoch per each geopath')
   parser.add_argument('--batch_num', type=int, default=256,
                       help='The Number of batches per each geopath')
