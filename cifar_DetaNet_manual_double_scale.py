@@ -111,7 +111,7 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar
   for i in range(len(FL)):
     if FL[i] == 0:
       for j in range(M):
-        layer_modules_list[j], weights_list[i + 1,j], biases_list[i + 1,j] = pathnet.res_fire_layer(sum_weights_list[i+1,j][1] * net, geopath[i + 1,j], 'res_fire_layer'+str(i+2)+"_"+str(j+1))
+        layer_modules_list[j], weights_list[i + 1,j], biases_list[i + 1,j] = pathnet.res_fire_layer(sum_weights_list[i+1,j][1] * net, geopath[i + 1,j], 'res_fire_layer'+str(i+2)+"_"+str(j+1),keep_prob)
     else:
       # check dimension_reduction input whether to small 1*1
       if int(net.get_shape()[1]) == 1 and int(net.get_shape()[2]) == 1:

@@ -255,7 +255,30 @@ def _variable_on_device(name, initial_value, trainable=True):
   var = tf.Variable(name = name, initial_value=initial_value, trainable=trainable)
   return var
 
-def _conv_layer(layer_name, input_tensor, filters, size, stride, padding,freeze=False, relu=True, stddev=0.001):
+def _conv_layer(layer_name, input_tensor, keep_prob, filters, size, stride, padding,freeze=False, relu=True, stddev=0.001):
+  with tf.variable_scope(layer_name) as scope:
+    channels = input_tensor.get_shape()[3]
+
+    #kernel_init = tf.truncated_normal_initializer(stddev=stddev, dtype=tf.float32)=
+    #bias_init = tf.constant_initializer(0.0)
+    kernel_init = tf.random_normal(shape=[size, size, int(channels), filters], stddev=stddev)
+    bias_init = tf.zeros(shape=[filters])
+
+    kernel = _variable_with_weight_decay('kernels', wd=0.0001 , initial_value=kernel_init, trainable=(not freeze))
+    biases = _variable_on_device('biases',initial_value=bias_init, trainable=(not freeze))
+
+    conv = tf.nn.conv2d(input_tensor, kernel, [1, stride, stride, 1], padding=padding, name='convolution')
+    conv_bias = tf.nn.bias_add(conv, biases, name='bias_add')
+    if relu:
+      out = tf.nn.relu(conv_bias, 'relu')
+    else:
+      out = conv_bias
+    out = batch_norm(out)
+    out = tf.nn.dropout(out, keep_prob)
+    return out, kernel, biases
+
+
+def _conv_layer_without(layer_name, input_tensor, filters, size, stride, padding,freeze=False, relu=True, stddev=0.001):
   with tf.variable_scope(layer_name) as scope:
     channels = input_tensor.get_shape()[3]
 
@@ -275,6 +298,7 @@ def _conv_layer(layer_name, input_tensor, filters, size, stride, padding,freeze=
       out = conv_bias
     out = batch_norm(out)
     return out, kernel, biases
+
 
   
 def _max_pooling_layer(input_tensor, kernel_size, stride, padding, layer_name):
@@ -331,7 +355,7 @@ def fire_layer(input_tensor, s1x1, e1x1, e3x3, is_active, layer_name, stddev=0.0
 
 
 
-def res_fire_layer(input_tensor, is_active, layer_name, stddev=0.01,freeze=False):
+def res_fire_layer(input_tensor, is_active, layer_name, keep_prob, stddev=0.01,freeze=False):
   """Fire layer constructor.
 
   Args:
@@ -350,17 +374,17 @@ def res_fire_layer(input_tensor, is_active, layer_name, stddev=0.01,freeze=False
   e1x1 = int(s1x1 / 2)
   e3x3 = s1x1 - e1x1
 
-  sq1x1, _kernel, _bias = _conv_layer(layer_name+'/squeeze1x1', input_tensor, filters=s1x1, size=1, stride=1,
+  sq1x1, _kernel, _bias = _conv_layer(layer_name+'/squeeze1x1', input_tensor, keep_prob , filters=s1x1, size=1, stride=1,
     padding='SAME', stddev=stddev, freeze=freeze)
   kernels.append(_kernel)
   biases.append(_bias)
 
-  ex1x1 ,_kernel, _bias= _conv_layer(layer_name+'/expand1x1', sq1x1, filters=e1x1, size=1, stride=1,
+  ex1x1 ,_kernel, _bias= _conv_layer(layer_name+'/expand1x1', sq1x1,keep_prob ,filters=e1x1, size=1, stride=1,
     padding='SAME', stddev=stddev, freeze=freeze)
   kernels.append(_kernel)
   biases.append(_bias)
 
-  ex3x3 ,_kernel, _bias= _conv_layer(layer_name+'/expand3x3', sq1x1, filters=e3x3, size=3, stride=1,
+  ex3x3 ,_kernel, _bias= _conv_layer(layer_name+'/expand3x3', sq1x1, keep_prob, filters=e3x3, size=3, stride=1,
     padding='SAME', stddev=stddev, freeze=freeze)
   kernels.append(_kernel)
   biases.append(_bias)
@@ -412,7 +436,7 @@ def Dimensionality_reduction_module(input_tensor, is_active, layer_name, stddev=
   """
   c3x3 = int(int(input_tensor.get_shape()[3]) / 2)
   feature_map_of_pooling = _max_pooling_layer(input_tensor,  kernel_size= 2, stride=2, padding='VALID', layer_name = layer_name+'/pooling')
-  feature_map_of_convolution, _kernel, _bias = _conv_layer(layer_name+'/convolution', input_tensor, filters=c3x3, size=2, stride=2,
+  feature_map_of_convolution, _kernel, _bias = _conv_layer_without(layer_name+'/convolution', input_tensor, filters=c3x3, size=2, stride=2,
     padding='VALID', stddev=stddev, freeze=freeze)
   return  tf.concat([feature_map_of_pooling, feature_map_of_convolution], 3, name=layer_name+'/concat_pc') * is_active, [_kernel], [_bias]
 
