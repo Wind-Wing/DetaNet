@@ -72,6 +72,7 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar
   with tf.name_scope('input'):
     x = tf.placeholder(tf.float32, [None, 32*32*3], name='x-input')
     y_ = tf.placeholder(tf.float32, [None, 10], name='y-input')
+  keep_prob = tf.placeholder(tf.float32)
 
   with tf.name_scope('input_reshape'):
     image_shaped_input = tf.reshape(x, [-1, 32, 32, 3])
@@ -102,7 +103,7 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar
 
   # first layer: conv 
   for j in range(M):
-    layer_modules_list[j], weights_list[0,j], biases_list[0,j] = pathnet.conv_module(sum_weights_list[0][j][1] * image_shaped_input, F, [5,5], geopath[0,j], 1,  'conv_layer'+str(0+1)+"_"+str(j+1))
+    layer_modules_list[j], weights_list[0,j], biases_list[0,j] = pathnet.conv_module(sum_weights_list[0][j][1] * image_shaped_input, F, [5,5], geopath[0,j], 1,  'conv_layer'+str(0+1)+"_"+str(j+1), keep_prob)
 
   net=np.sum(map(lambda (a,b):a*b[0], zip(layer_modules_list , sum_weights_list[0])))/ M
 
@@ -156,7 +157,7 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar
   
   # GradientDescent 
   with tf.name_scope('train'):
-    train_step = tf.train.GradientDescentOptimizer(FLAGS.learning_rate).minimize(cross_entropy,var_list=var_list_to_learn);
+    train_step = tf.train.AdamOptimizer(FLAGS.learning_rate).minimize(cross_entropy,var_list=var_list_to_learn);
 
   # Accuracy 
   with tf.name_scope('accuracy'):
@@ -189,7 +190,8 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar
     tr_label1=tr_label1[idx]
     for k in range(s):
       _, acc_geo_tmp = sess.run([train_step, accuracy], feed_dict={x:tr_data1[k*FLAGS.batch_num :(k+1)*FLAGS.batch_num,:],
-                                                                y_:tr_label1[k*FLAGS.batch_num :(k+1)*FLAGS.batch_num,:]})
+                                                                y_:tr_label1[k*FLAGS.batch_num :(k+1)*FLAGS.batch_num,:],
+                                                                keep_prob:FLAGS.dropout})
 
       acc_geo_tr+=acc_geo_tmp
       counter+=1
@@ -197,8 +199,8 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar
         print("step %d, single_acc %f" % (counter , acc_geo_tmp))
 
       # test on test set
-      if(counter%10000 == 0):
-        test_acc = sess.run(accuracy, feed_dict={x:ts_data1, y_:ts_label1})
+      if(counter%100 == 0):
+        test_acc = sess.run(accuracy, feed_dict={x:ts_data1, y_:ts_label1,keep_prob:1})
         print("step %d, acc_on_test_set %f" %(counter, test_acc))
 
 
@@ -216,22 +218,27 @@ def main(_):
   tf.gfile.MakeDirs(FLAGS.log_dir)
 
   # read cifar10 dataset
+ # read cifar10 dataset
   tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar10, ts_label_cifar10, ts_num_len_cifar10 = load_cifar10_data()
 
 
-  # ceate inti candidates
-  candidate1 = Candidate()
+  # # ceate inti candidates
+  # candidate1 = Candidate()
   
-  # set your structurs here
-  candidate1.feature_layer_num = 3
-  candidate1.feature_layer_array = [1, 0, 1] 
-  candidate1.fc_layer_num = 0       
-  candidate1.module_num = 2         
-  candidate1.filter_num = 10 
+  # # set your structurs here
+  # candidate1.feature_layer_num = 3
+  # candidate1.feature_layer_array = [1, 0, 1] 
+  # candidate1.fc_layer_num = 0       
+  # candidate1.module_num = 2         
+  # candidate1.filter_num = 10 
 
-  final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar10, ts_label_cifar10, ts_num_len_cifar10, candidate1, FLAGS.max_step)
-  print("best structure1 avg_acc "+ str(final_acc))
-  candidate1.display_structure()
+  # compurtation_of_network_1 = candidate1.compurtation_of_network()
+  # print("===========================================================")
+  # print("compurtation_of_network_1 :  " +  str(   )+ str(compurtation_of_network_1))
+
+  # final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate1, FLAGS.max_step)
+  # print("best structure1 avg_acc "+ str(final_acc))
+  # candidate1.display_structure()
 
 
   # ceate inti candidates
@@ -244,61 +251,81 @@ def main(_):
   candidate2.module_num = 3         
   candidate2.filter_num = 10 
 
-  final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar10, ts_label_cifar10, ts_num_len_cifar10, candidate2, FLAGS.max_step)
+
+  compurtation_of_network_2 = candidate2.compurtation_of_network()
+  print("===========================================================")
+  print("compurtation_of_network_2 :  " +  str(   )+ str(compurtation_of_network_2))
+
+
+  final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar10, ts_label_cifar10, ts_num_len_cifar10, candidate2, FLAGS.max_step)  
   print("best structure2 avg_acc "+ str(final_acc))
   candidate2.display_structure()
 
 
-  # ceate inti candidates
-  candidate3 = Candidate()
+  # # ceate inti candidates
+  # candidate3 = Candidate()
   
-  # set your structurs here
-  candidate3.feature_layer_num = 5
-  candidate3.feature_layer_array = [1, 0, 1, 0, 1] 
-  candidate3.fc_layer_num = 2       
-  candidate3.module_num = 4         
-  candidate3.filter_num = 10 
+  # # set your structurs here
+  # candidate3.feature_layer_num = 5
+  # candidate3.feature_layer_array = [1, 0, 1, 0, 1] 
+  # candidate3.fc_layer_num = 2       
+  # candidate3.module_num = 4         
+  # candidate3.filter_num = 10 
 
-  final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar10, ts_label_cifar10, ts_num_len_cifar10, candidate3, FLAGS.max_step)
-  print("best structure3 avg_acc "+ str(final_acc))
-  candidate3.display_structure()
+  # compurtation_of_network_3 = candidate3.compurtation_of_network()
+  # print("===========================================================")
+  # print("compurtation_of_network_3 :  " +  str(   )+ str(compurtation_of_network_3))
+
+  # final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate3, FLAGS.max_step)
+  # print("best structure3 avg_acc "+ str(final_acc))
+  # candidate3.display_structure()
 
 
-    # ceate inti candidates
-  candidate4 = Candidate()
+  #   # ceate inti candidates
+  # candidate4 = Candidate()
   
-  # set your structurs here
-  candidate4.feature_layer_num = 5
-  candidate4.feature_layer_array = [1, 0, 1, 0, 1] 
-  candidate4.fc_layer_num = 2       
-  candidate4.module_num = 5         
-  candidate4.filter_num = 16 
+  # # set your structurs here
+  # candidate4.feature_layer_num = 5
+  # candidate4.feature_layer_array = [1, 0, 1, 0, 1] 
+  # candidate4.fc_layer_num = 2       
+  # candidate4.module_num = 5         
+  # candidate4.filter_num = 16 
 
-  final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar10, ts_label_cifar10, ts_num_len_cifar10, candidate4, FLAGS.max_step)
-  print("best structure4 avg_acc "+ str(final_acc))
-  candidate4.display_structure()
+  # compurtation_of_network_4 = candidate4.compurtation_of_network()
+  # print("===========================================================")
+  # print("compurtation_of_network_4 :  " +  str(   )+ str(compurtation_of_network_4))
+
+  # final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate4, FLAGS.max_step)
+  # print("best structure4 avg_acc "+ str(final_acc))
+  # candidate4.display_structure()
 
 
-    # ceate inti candidates
-  candidate5 = Candidate()
+  #   # ceate inti candidates
+  # candidate5 = Candidate()
   
-  # set your structurs here
-  candidate5.feature_layer_num = 7
-  candidate5.feature_layer_array = [1, 0, 1, 0, 1, 0, 0] 
-  candidate5.fc_layer_num = 3       
-  candidate5.module_num = 3         
-  candidate5.filter_num = 16
+  # # set your structurs here
+  # candidate5.feature_layer_num = 7
+  # candidate5.feature_layer_array = [1, 0, 1, 0, 1, 0, 0] 
+  # candidate5.fc_layer_num = 3       
+  # candidate5.module_num = 3         
+  # candidate5.filter_num = 16
 
-  final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar10, ts_label_cifar10, ts_num_len_cifar10, candidate5, FLAGS.max_step)
-  print("best structure5 avg_acc "+ str(final_acc))
-  candidate5.display_structure()
+
+  # compurtation_of_network_5 = candidate5.compurtation_of_network()
+  # print("===========================================================")
+  # print("compurtation_of_network_5 :  " +  str(   )+ str(compurtation_of_network_5))
+
+
+  # final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate5, FLAGS.max_step)
+  # print("best structure5 avg_acc "+ str(final_acc))
+  # candidate5.display_structure()
 
 
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   
-  parser.add_argument('--cifar_data_dir', type=str, default='/dataset/cifar_data/cifar-10-batches-bin',
+  parser.add_argument('--cifar_data_dir', type=str, default='/data1/wyd/Downloads/dataset/cifar_data/cifar-10-batches-bin',
                       help='Directory for storing input data')
   parser.add_argument('--log_dir', type=str, default='/tmp/tensorflow/DetaNet/',
                       help='Summaries log directry')
@@ -314,8 +341,9 @@ if __name__ == '__main__':
                       help='The Number of Candidates of geopath, should greater than 4')
   parser.add_argument('--max_generations', type = int,default = 20,
                       help='The Generation Number of Evolution')
-  parser.add_argument('--max_step', type = int,default = 100000,
+  parser.add_argument('--max_step', type = int,default = 200000,
                       help='The max training step of final structure')
-
+  parser.add_argument('--dropout', type=float, default=0.5,
+                      help='Keep probability for training dropout.')
   FLAGS, unparsed = parser.parse_known_args()
   tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)

@@ -25,6 +25,9 @@ class Candidate:
     # struct level 3
     filter_num = 0          # filters in each module, must be an even number
     
+    input_shape = 32
+
+    input_channel = 3
 
     # random generate candidates
     def __init__(self):
@@ -36,7 +39,21 @@ class Candidate:
 
         self.filter_num = self._get_random_num(self.minFl, self.maxFl)
 
-    
+    def compurtation_of_network(self):
+        compurtation_of_fl = 28* 28* self.filter_num* self.module_num* self.input_channel
+        i = 0
+        output_size = 28
+        while i < self.feature_layer_num:
+            if self.feature_layer_array[i] == 0:
+                compurtation = self.module_num* (output_size* output_size* 1* 1 * self.filter_num* self.filter_num + output_size *output_size*self.filter_num* self.filter_num/2 *100) 
+                compurtation_of_fl = compurtation_of_fl +compurtation
+            else :
+                output_size = np.floor(output_size/2)
+                compurtation = output_size* output_size* self.filter_num * self.filter_num/2 *3 *3
+                compurtation_of_fl = compurtation_of_fl + compurtation
+            i = i + 1
+        return compurtation_of_fl
+   
     def _get_random_num(self, min_value, max_value, init=True ):
         '''
         # this random generator is based on that 

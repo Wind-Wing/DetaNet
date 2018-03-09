@@ -104,6 +104,12 @@ def variable_summaries(var):
     tf.summary.scalar('min', tf.reduce_min(var))
     tf.summary.histogram('histogram', var)
 
+
+def batch_norm(x):
+  epsilon = 1e-3
+  batch_mean, batch_var = tf.nn.moments(x, [0])
+  return tf.nn.batch_normalization(x, batch_mean, batch_var, None, None, epsilon)
+
 # full connection layer
 def fc_layer(input_tensor, filt_num, is_active, layer_name, act=tf.nn.relu):
   # init
@@ -163,7 +169,7 @@ def module2(i,input_tensor, filt_num, is_active, layer_name, act=tf.nn.relu):
       tf.summary.histogram('activations', activations)
       return activations * is_active, weights, biases
 
-def conv_module(input_tensor, filt_num, kernel_size, is_active, stride, layer_name, act=tf.nn.relu):
+def conv_module(input_tensor, filt_num, kernel_size, is_active, stride, layer_name, keep_prob ,act=tf.nn.relu):
   '''conv layer
   Args:
     input_tensor: output of former layer or input training data.
@@ -189,6 +195,8 @@ def conv_module(input_tensor, filt_num, kernel_size, is_active, stride, layer_na
       preactivate = tf.nn.conv2d(input_tensor, filter=conv_kernel[0],strides=[1,stride,stride,1],padding="VALID") + biases
       tf.summary.histogram('pre_activations', preactivate)
     activations = act(preactivate, name='activation')
+    activations = batch_norm(activations)
+    activations = tf.nn.dropout(activations, keep_prob)
     tf.summary.histogram('activations', activations)
     return activations * is_active, conv_kernel, biases
 
@@ -247,7 +255,7 @@ def _variable_on_device(name, initial_value, trainable=True):
   var = tf.Variable(name = name, initial_value=initial_value, trainable=trainable)
   return var
 
-def _conv_layer(layer_name, input_tensor, filters, size, stride, padding ,freeze=False, relu=True, stddev=0.001):
+def _conv_layer(layer_name, input_tensor, filters, size, stride, padding,freeze=False, relu=True, stddev=0.001):
   with tf.variable_scope(layer_name) as scope:
     channels = input_tensor.get_shape()[3]
 
@@ -265,6 +273,7 @@ def _conv_layer(layer_name, input_tensor, filters, size, stride, padding ,freeze
       out = tf.nn.relu(conv_bias, 'relu')
     else:
       out = conv_bias
+    out = batch_norm(out)
     return out, kernel, biases
 
   

@@ -151,7 +151,7 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, candidate, ma
   
   # GradientDescent 
   with tf.name_scope('train'):
-    train_step = tf.train.GradientDescentOptimizer(FLAGS.learning_rate).minimize(cross_entropy,var_list=var_list_to_learn);
+    train_step = tf.train.AdamOptimizer(FLAGS.learning_rate).minimize(cross_entropy,var_list=var_list_to_learn);
 
   # Accuracy 
   with tf.name_scope('accuracy'):
