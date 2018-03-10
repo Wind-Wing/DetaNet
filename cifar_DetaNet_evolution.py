@@ -179,7 +179,6 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar
 
   step_list = [max_data_len for i in range(int(max_steps/max_data_len))] + [max_steps%max_data_len]
   counter = 0
-  acc_geo_tr = 0
   #print(step_list)
   #print(max_data_len)
   #print("max_steps: "+max_steps)
@@ -193,7 +192,7 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar
                                                                 y_:tr_label1[k*FLAGS.batch_num :(k+1)*FLAGS.batch_num,:],
                                                                 keep_prob:FLAGS.dropout})
 
-      acc_geo_tr+=acc_geo_tmp
+      acc_geo_tmp
       counter+=1
       if(counter > 1 and counter%1000 ==0 and max_steps > FLAGS.T):
         print("step %d, single_acc %f" % (counter , acc_geo_tmp))
@@ -202,10 +201,9 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar
       if(counter > 1 and counter%100 == 0 and max_steps > FLAGS.T):
         test_acc = sess.run(accuracy, feed_dict={x:ts_data1, y_:ts_label1,keep_prob:1})
         print("step %d, acc_on_test_set %f" %(counter, test_acc))
-
-
+        
   sess.close()
-  return acc_geo_tr / max_steps
+  return test_acc
 
 
 def main(_):
@@ -258,12 +256,12 @@ def main(_):
     _time_cost = time.time() - _start_time
     print(acc)
     candidates[_best1].display_structure()
-    print("generation: %d, avg_acc: %f, time_cost: %f s" % (step, max(acc), _time_cost))
+    print("generation: %d, test_acc: %f, time_cost: %f s" % (step, max(acc), _time_cost))
 
   candidates[best_index].display_structure()
   final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar10, ts_label_cifar10, ts_num_len_cifar10, candidates[best_index], FLAGS.max_step)
 
-  print("best structure avg_acc "+ str(final_acc))
+  print("best structure test_acc "+ str(final_acc))
   candidates[best_index].display_structure()
   compurtation_of_network = candidates[best_index].compurtation_of_network()
   print("===========================================================")
