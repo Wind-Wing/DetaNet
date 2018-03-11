@@ -181,7 +181,7 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar
   counter = 0
   #print(step_list)
   #print(max_data_len)
-  #print("max_steps: "+max_steps)
+  #print("max_steps: "+max_steps)t_
   for s in step_list: 
     idx=range(len(tr_data1))
     np.random.shuffle(idx)
@@ -196,14 +196,16 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar
       counter+=1
       if(counter > 1 and counter%1000 ==0 and max_steps > FLAGS.T):
         print("step %d, single_acc %f" % (counter , acc_geo_tmp))
-
+  test_acc = []
+  for i in range(100):
+    test_acc += [sess.run(accuracy, feed_dict={x:ts_data1[i100:(i+1)*100,:], y_:ts_label1[i*100:(i+1)*100,:],keep_prob:1})]
       # test on test set
-      if(counter > 1 and counter%100 == 0 and max_steps > FLAGS.T):
-        test_acc = sess.run(accuracy, feed_dict={x:ts_data1, y_:ts_label1,keep_prob:1})
-        print("step %d, acc_on_test_set %f" %(counter, test_acc))
+      #if(counter > 1 and counter%100 == 0 and max_steps > FLAGS.T):
+      #  test_acc = sess.run(accuracy, feed_dict={x:ts_data1, y_:ts_label1,keep_prob:1})
+      #  print("step %d, acc_on_test_set %f" %(counter, test_acc))
         
   sess.close()
-  return test_acc
+  return sum(test_acc)/100
 
 
 def main(_):
