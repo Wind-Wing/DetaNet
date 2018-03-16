@@ -200,8 +200,10 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar
 
       # test on test set
       if(counter%100 == 0):
-        test_acc = sess.run(accuracy, feed_dict={x:ts_data1, y_:ts_label1,keep_prob:1})
-        print("step %d, acc_on_test_set %f" %(counter, test_acc))
+        test_acc = []
+        for i in range(100):
+          test_acc += [sess.run(accuracy, feed_dict={x:ts_data1[i*100:(i+1)*100,:], y_:ts_label1[i*100:(i+1)*100,:],keep_prob:1})]
+        print("step %d, acc_on_test_set %f" %(counter, sum(test_acc)/100))
 
 
   sess.close()
@@ -241,25 +243,25 @@ def main(_):
   # candidate1.display_structure()
 
 
-  # # ceate inti candidates
-  # candidate2 = Candidate()
+  # ceate inti candidates
+  candidate2 = Candidate()
   
-  # # set your structurs here
-  # candidate2.feature_layer_num = 4
-  # candidate2.feature_layer_array = [1, 0, 1, 0] 
-  # candidate2.fc_layer_num = 1       
-  # candidate2.module_num = 3         
-  # candidate2.filter_num = 10 
+  # set your structurs here
+  candidate2.feature_layer_num = 4
+  candidate2.feature_layer_array = [1, 0, 0, 0] 
+  candidate2.fc_layer_num = 1       
+  candidate2.module_num = 4         
+  candidate2.filter_num = 20 
 
 
-  # compurtation_of_network_2 = candidate2.compurtation_of_network()
-  # print("===========================================================")
-  # print("compurtation_of_network_2 :  " +  str(   )+ str(compurtation_of_network_2))
+  compurtation_of_network_2 = candidate2.compurtation_of_network()
+  print("===========================================================")
+  print("compurtation_of_network_2 :  " +  str(   )+ str(compurtation_of_network_2))
 
 
-  # final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar10, ts_label_cifar10, ts_num_len_cifar10, candidate2, FLAGS.max_step)  
-  # print("best structure2 avg_acc "+ str(final_acc))
-  # candidate2.display_structure()
+  final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar10, ts_label_cifar10, ts_num_len_cifar10, candidate2, FLAGS.max_step)  
+  print("best structure2 avg_acc "+ str(final_acc))
+  candidate2.display_structure()
 
 
   # # ceate inti candidates
@@ -300,25 +302,25 @@ def main(_):
   # candidate4.display_structure()
 
 
-    # ceate inti candidates
-  candidate5 = Candidate()
+  #   # ceate inti candidates
+  # candidate5 = Candidate()
   
-  # set your structurs here
-  candidate5.feature_layer_num = 7
-  candidate5.feature_layer_array = [1, 0, 1, 0, 1, 0, 0] 
-  candidate5.fc_layer_num = 3       
-  candidate5.module_num = 3         
-  candidate5.filter_num = 16
+  # # set your structurs here
+  # candidate5.feature_layer_num = 7
+  # candidate5.feature_layer_array = [1, 0, 1, 0, 1, 0, 0] 
+  # candidate5.fc_layer_num = 3       
+  # candidate5.module_num = 3         
+  # candidate5.filter_num = 16
 
 
-  compurtation_of_network_5 = candidate5.compurtation_of_network()
-  print("===========================================================")
-  print("compurtation_of_network_5 :  " +  str(   )+ str(compurtation_of_network_5))
+  # compurtation_of_network_5 = candidate5.compurtation_of_network()
+  # print("===========================================================")
+  # print("compurtation_of_network_5 :  " +  str(   )+ str(compurtation_of_network_5))
 
 
-  final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar10, ts_label_cifar10, ts_num_len_cifar10, candidate5, FLAGS.max_step)  
-  print("best structure5 avg_acc "+ str(final_acc))
-  candidate5.display_structure()
+  # final_acc = train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar10, ts_label_cifar10, ts_num_len_cifar10, candidate5, FLAGS.max_step)  
+  # print("best structure5 avg_acc "+ str(final_acc))
+  # candidate5.display_structure()
 
 
 

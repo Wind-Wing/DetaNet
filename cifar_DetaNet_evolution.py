@@ -198,7 +198,7 @@ def train(tr_data_cifar10, tr_label_cifar10, data_num_len_cifar10, ts_data_cifar
         print("step %d, single_acc %f" % (counter , acc_geo_tmp))
   test_acc = []
   for i in range(100):
-    test_acc += [sess.run(accuracy, feed_dict={x:ts_data1[i100:(i+1)*100,:], y_:ts_label1[i*100:(i+1)*100,:],keep_prob:1})]
+    test_acc += [sess.run(accuracy, feed_dict={x:ts_data1[i*100:(i+1)*100,:], y_:ts_label1[i*100:(i+1)*100,:],keep_prob:1})]
       # test on test set
       #if(counter > 1 and counter%100 == 0 and max_steps > FLAGS.T):
       #  test_acc = sess.run(accuracy, feed_dict={x:ts_data1, y_:ts_label1,keep_prob:1})
@@ -278,9 +278,9 @@ if __name__ == '__main__':
                       help='Summaries log directry')
   parser.add_argument('--learning_rate', type=float, default=0.01,
                       help='Initial learning rate')
-  parser.add_argument('--T', type=int, default=2000,
+  parser.add_argument('--T', type=int, default=8000,
                       help='The Number of epoch per each geopath')
-  parser.add_argument('--batch_num', type=int, default=256,
+  parser.add_argument('--batch_num', type=int, default=64,
                       help='The Number of batches per each geopath')
   parser.add_argument('--candi', type=int, default=10,
                       help='The Number of Candidates of geopath, should greater than 4')
